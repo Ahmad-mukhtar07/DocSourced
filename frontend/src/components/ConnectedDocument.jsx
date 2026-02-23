@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth.js';
 import { useFeatureAccess } from '../hooks/useFeatureAccess.js';
 import { getConnectedDocs, removeConnectedDoc } from '../lib/connectedDocsService.js';
 import { UpgradeModal } from './UpgradeModal';
+import { SnipHistory } from './SnipHistory';
 import './ConnectedDocument.css';
 
 /**
@@ -497,22 +498,14 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
           </button>
         </div>
       )}
-      {canAccessSnipHistory ? (
-        <p className="connected-doc__hint">Snip History (Pro) — view past snips here in a future update.</p>
-      ) : (
-        <button
-          type="button"
-          className="connected-doc__btn connected-doc__btn--secondary"
-          onClick={() => {
-            setUpgradeModalReason('snip_history');
-            setShowUpgradeModal(true);
-          }}
-          disabled={disabled}
-          title="Upgrade to Pro to access Snip History"
-        >
-          Snip History <span className="connected-doc__pro-badge">Pro</span>
-        </button>
-      )}
+      <SnipHistory
+        documentId={documentId}
+        onShowUpgrade={() => {
+          setUpgradeModalReason('snip_history');
+          setShowUpgradeModal(true);
+        }}
+        disabled={disabled}
+      />
       <button
         type="button"
         className="connected-doc__btn connected-doc__btn--magic"

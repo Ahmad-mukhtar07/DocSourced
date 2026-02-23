@@ -89,3 +89,20 @@ export async function plugItInAtSection(selectionData, insertIndex) {
 export async function getSnipUsage() {
   return sendMessage({ type: 'GET_SNIP_USAGE' });
 }
+
+/**
+ * Reinsert an image from Snip History into the current doc at the given section index.
+ * @param {string} driveUrl - Image URL (Drive link)
+ * @param {number} insertIndex - Section index from getDocSections
+ * @param {{ pageUrl?: string, pageTitle?: string }} meta - Optional source metadata
+ * @returns {Promise<{ success: boolean, error?: string }>}
+ */
+export async function reinsertImageAtSection(driveUrl, insertIndex, meta = {}) {
+  return sendMessage({
+    type: 'REINSERT_IMAGE_AT_SECTION',
+    driveUrl,
+    insertIndex,
+    pageUrl: meta.pageUrl ?? '',
+    pageTitle: meta.pageTitle ?? '',
+  });
+}

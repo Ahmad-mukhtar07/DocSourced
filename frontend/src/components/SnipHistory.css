@@ -1,0 +1,431 @@
+.snip-history {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.snip-history__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.snip-history__search {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.snip-history__search::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.snip-history__search:focus {
+  outline: none;
+  border-color: rgba(26, 115, 232, 0.6);
+}
+
+.snip-history__list-wrap {
+  max-height: min(280px, 40vh);
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.snip-history__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0;
+}
+
+.snip-history__item {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.snip-history__item:last-child {
+  border-bottom: none;
+}
+
+.snip-history__item-inner {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.snip-history__thumb {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.snip-history__thumb--placeholder {
+  display: block;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.snip-history__item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.snip-history__domain {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 0.15rem;
+}
+
+.snip-history__page-title {
+  margin: 0 0 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.snip-history__preview {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.snip-history__url {
+  display: block;
+  font-size: 0.75rem;
+  color: #7dd3fc;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 0.2rem;
+}
+
+.snip-history__url:hover {
+  text-decoration: underline;
+}
+
+.snip-history__url--muted {
+  color: rgba(255, 255, 255, 0.45);
+  cursor: default;
+}
+
+.snip-history__url--muted:hover {
+  text-decoration: none;
+}
+
+.snip-history__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 0.35rem;
+}
+
+.snip-history__doc {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.snip-history__time {
+  flex-shrink: 0;
+}
+
+.snip-history__actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.snip-history__btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.snip-history__btn--reinsert {
+  background: rgba(26, 115, 232, 0.25);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.snip-history__btn--reinsert:hover:not(:disabled) {
+  background: rgba(26, 115, 232, 0.4);
+}
+
+.snip-history__btn--delete {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.snip-history__btn--delete:hover:not(:disabled) {
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.snip-history__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.snip-history__status,
+.snip-history__empty {
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.snip-history__error {
+  margin: 0.35rem 0;
+  font-size: 0.8rem;
+  color: #fca5a5;
+}
+
+.snip-history__sections {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.snip-history__sections-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.snip-history__sections-list {
+  list-style: none;
+  margin: 0 0 0.35rem;
+  padding: 0;
+}
+
+.snip-history__sections-list li {
+  margin-bottom: 0.2rem;
+}
+
+.snip-history__section-btn {
+  display: block;
+  width: 100%;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  text-align: left;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+}
+
+.snip-history__section-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.snip-history__section-cancel {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.4rem;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+.snip-history__section-cancel:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Locked (free) state */
+.snip-history--locked {
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+.snip-history__locked-text {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.snip-history__upgrade-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid rgba(26, 115, 232, 0.5);
+  border-radius: 6px;
+  background: rgba(26, 115, 232, 0.2);
+  color: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+}
+
+.snip-history__upgrade-btn:hover:not(:disabled) {
+  background: rgba(26, 115, 232, 0.35);
+}
+
+@media (prefers-color-scheme: light) {
+  .snip-history {
+    border-top-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .snip-history__title {
+    color: rgba(0, 0, 0, 0.8);
+  }
+
+  .snip-history__search {
+    border-color: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.04);
+    color: rgba(0, 0, 0, 0.9);
+  }
+
+  .snip-history__search::placeholder {
+    color: rgba(0, 0, 0, 0.45);
+  }
+
+  .snip-history__list-wrap {
+    border-color: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .snip-history__item {
+    border-bottom-color: rgba(0, 0, 0, 0.06);
+  }
+
+  .snip-history__thumb {
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  .snip-history__thumb--placeholder {
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  .snip-history__domain {
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  .snip-history__page-title {
+    color: rgba(0, 0, 0, 0.9);
+  }
+
+  .snip-history__preview {
+    color: rgba(0, 0, 0, 0.85);
+  }
+
+  .snip-history__url {
+    color: #0369a1;
+  }
+
+  .snip-history__url--muted {
+    color: rgba(0, 0, 0, 0.45);
+  }
+
+  .snip-history__meta {
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  .snip-history__btn--reinsert {
+    background: rgba(26, 115, 232, 0.15);
+    color: #1a73e8;
+  }
+
+  .snip-history__btn--reinsert:hover:not(:disabled) {
+    background: rgba(26, 115, 232, 0.25);
+  }
+
+  .snip-history__btn--delete {
+    color: rgba(0, 0, 0, 0.55);
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .snip-history__btn--delete:hover:not(:disabled) {
+    color: #b91c1c;
+    border-color: rgba(185, 28, 28, 0.4);
+    background: rgba(185, 28, 28, 0.08);
+  }
+
+  .snip-history__status,
+  .snip-history__empty {
+    color: rgba(0, 0, 0, 0.55);
+  }
+
+  .snip-history__error {
+    color: #b91c1c;
+  }
+
+  .snip-history__sections {
+    border-color: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .snip-history__sections-label {
+    color: rgba(0, 0, 0, 0.65);
+  }
+
+  .snip-history__section-btn {
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.85);
+  }
+
+  .snip-history__section-btn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
+  .snip-history__section-cancel {
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  .snip-history__section-cancel:hover {
+    color: rgba(0, 0, 0, 0.85);
+  }
+
+  .snip-history--locked {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+
+  .snip-history__locked-text {
+    color: rgba(0, 0, 0, 0.6);
+  }
+
+  .snip-history__upgrade-btn {
+    border-color: rgba(26, 115, 232, 0.4);
+    background: rgba(26, 115, 232, 0.12);
+    color: #1a73e8;
+  }
+
+  .snip-history__upgrade-btn:hover:not(:disabled) {
+    background: rgba(26, 115, 232, 0.2);
+  }
+}

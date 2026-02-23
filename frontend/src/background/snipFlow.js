@@ -9,7 +9,7 @@ import { ensureResearchSnipsFolder, uploadImageToDrive } from './googleDrive.js'
 import { insertImageWithSource, insertImageWithSourceAtPosition } from './googleDocs.js';
 import { showNotification } from './notifications.js';
 import { tryPasteImageAtCursorInDocTab } from './pasteAtCursor.js';
-import { recordSnipAndCheckLimit } from './snipUsage.js';
+import { recordSnipAndCheckLimit, recordImageSnipAndCheckLimit } from './snipUsage.js';
 
 const SNIP_OVERLAY_PATH = 'snipOverlay.js';
 const SNIP_INSERT_INDEX_KEY = 'eznote_snip_insert_index';
@@ -93,6 +93,15 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
 
   const pageUrl = pageInfo.pageUrl ?? '';
   const pageTitle = pageInfo.pageTitle ?? 'Untitled';
+  const domain = (() => {
+    try {
+      if (!pageUrl) return '';
+      const u = new URL(pageUrl);
+      return u.hostname || '';
+    } catch (_) {
+      return '';
+    }
+  })();
   const timestamp = new Date().toISOString();
   const sourceText = '\nSource: ' + pageTitle + ' ' + timestamp;
 
@@ -162,10 +171,12 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
       const folderId = await ensureResearchSnipsFolder(token);
       const { fileId, imageUrl } = await uploadImageToDrive(token, blob, filename, folderId);
       if (!alreadyRecorded) {
-        const driveLink = fileId ? `https://drive.google.com/file/d/${fileId}/view` : '';
-        const usage = await recordSnipAndCheckLimit({
-          content: pageTitle,
-          source_url: driveLink,
+        const driveLink = imageUrl || (fileId ? `https://drive.google.com/uc?export=view&id=${fileId}` : '');
+        const usage = await recordImageSnipAndCheckLimit({
+          source_url: pageUrl,
+          page_title: pageTitle,
+          domain,
+          drive_url: driveLink,
           target_doc_id: documentId,
         });
         if (usage.error === 'snip_limit_reached') {

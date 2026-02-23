@@ -60,6 +60,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     'DOCS_GET_SECTIONS',
     'GET_PLUG_SELECTION',
     'PLUG_IT_IN_AT_SECTION',
+    'REINSERT_IMAGE_AT_SECTION',
     'GET_DOC_PREVIEW',
     'GET_SNIP_USAGE',
   ];

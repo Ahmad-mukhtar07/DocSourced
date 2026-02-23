@@ -11,6 +11,7 @@ import {
   resolveBlockImageUrls,
   getDocumentSections,
   insertHighlightAtPosition,
+  insertImageWithSourceAtPosition,
 } from './googleDocs.js';
 import { createNewDoc } from './googleDrive.js';
 import { getSelectionAndPageInfo } from './captureSelection.js';
@@ -195,6 +196,41 @@ export async function handleMessage(msg, sender) {
       return { sendResponse: true, response: { success: true } };
     } catch (err) {
       log.bg.warn('PLUG_IT_IN_AT_SECTION failed', err);
+      return {
+        sendResponse: true,
+        response: { success: false, error: err instanceof Error ? err.message : String(err) },
+      };
+    }
+  }
+
+  // --- Reinsert image from Snip History at section ---
+  if (type === 'REINSERT_IMAGE_AT_SECTION') {
+    const { driveUrl, insertIndex, pageUrl = '', pageTitle = '' } = msg;
+    if (!driveUrl || typeof insertIndex !== 'number') {
+      return {
+        sendResponse: true,
+        response: { success: false, error: 'Missing driveUrl or insertIndex' },
+      };
+    }
+    try {
+      const documentId = await getSelectedDocumentId();
+      if (!documentId) {
+        return { sendResponse: true, response: { success: false, error: 'No document selected' } };
+      }
+      const imageData = {
+        imageUrl: driveUrl,
+        imageWidthPt: 200,
+        imageHeightPt: 150,
+        pageUrl,
+        pageTitle,
+        timestamp: new Date().toISOString(),
+      };
+      await withTokenRetry((token) =>
+        insertImageWithSourceAtPosition(documentId, token, imageData, insertIndex)
+      );
+      return { sendResponse: true, response: { success: true } };
+    } catch (err) {
+      log.bg.warn('REINSERT_IMAGE_AT_SECTION failed', err);
       return {
         sendResponse: true,
         response: { success: false, error: err instanceof Error ? err.message : String(err) },

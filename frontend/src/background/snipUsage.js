@@ -8,7 +8,7 @@ const STORAGE_KEY_ANON = 'eznote_supabase_anon_key';
 const STORAGE_KEY_TOKEN = 'eznote_supabase_access_token';
 
 /**
- * Call record_snip_and_check_limit RPC. Returns { success: true } or { error: string }.
+ * Call record_snip_and_check_limit RPC (text/usage only — no insert into snips_history).
  * @param {{ content?: string, source_url?: string, target_doc_id?: string }} params
  * @returns {Promise<{ success?: boolean, error?: string, limit?: number }>}
  */
@@ -46,6 +46,62 @@ export async function recordSnipAndCheckLimit(params = {}) {
     const msg = data?.message || data?.error_description || data?.error || 'record_snip_failed';
     if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
       console.warn('[EZ-Note] record_snip_and_check_limit failed', res.status, msg, data);
+    }
+    return { error: msg };
+  }
+  if (data?.error) {
+    return { error: data.error, limit: data.limit };
+  }
+  return { success: true };
+}
+
+/**
+ * Call record_image_snip_and_check_limit RPC. Inserts image row into snips_history and enforces limit.
+ * @param {{ source_url?: string, page_title?: string, domain?: string, drive_url?: string, target_doc_id?: string }} params
+ * @returns {Promise<{ success?: boolean, error?: string, limit?: number }>}
+ */
+export async function recordImageSnipAndCheckLimit(params = {}) {
+  const {
+    source_url = '',
+    page_title = '',
+    domain = '',
+    drive_url = '',
+    target_doc_id = '',
+  } = params;
+  const stored = await new Promise((resolve) => {
+    chrome.storage.local.get([STORAGE_KEY_URL, STORAGE_KEY_ANON, STORAGE_KEY_TOKEN], resolve);
+  });
+  const url = stored[STORAGE_KEY_URL];
+  const anonKey = stored[STORAGE_KEY_ANON];
+  const token = stored[STORAGE_KEY_TOKEN];
+  if (!url || !anonKey || !token) {
+    return { error: 'not_authenticated' };
+  }
+
+  const rpcUrl = `${url.replace(/\/$/, '')}/rest/v1/rpc/record_image_snip_and_check_limit`;
+  const res = await fetch(rpcUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Apikey: anonKey,
+      Authorization: `Bearer ${token}`,
+      Prefer: 'return=representation',
+    },
+    body: JSON.stringify({
+      p_source_url: String(source_url).slice(0, 2048),
+      p_page_title: String(page_title).slice(0, 1024),
+      p_domain: String(domain).slice(0, 512),
+      p_drive_url: String(drive_url).slice(0, 2048),
+      p_target_doc_id: String(target_doc_id).slice(0, 256),
+    }),
+  });
+
+  let data = await res.json().catch(() => ({}));
+  if (Array.isArray(data) && data[0]) data = data[0];
+  if (!res.ok) {
+    const msg = data?.message || data?.error_description || data?.error || 'record_snip_failed';
+    if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
+      console.warn('[EZ-Note] record_image_snip_and_check_limit failed', res.status, msg, data);
     }
     return { error: msg };
   }
