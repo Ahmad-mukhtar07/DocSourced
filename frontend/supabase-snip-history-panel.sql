@@ -20,3 +20,23 @@ CREATE POLICY "Pro users can delete own snips"
       WHERE id = auth.uid() AND lower(tier) = 'pro'
     )
   );
+
+-- 3. Pro users can update their own snips (e.g. page_title)
+DROP POLICY IF EXISTS "Pro users can update own snips" ON public.snips_history;
+CREATE POLICY "Pro users can update own snips"
+  ON public.snips_history FOR UPDATE
+  TO authenticated
+  USING (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND lower(tier) = 'pro'
+    )
+  )
+  WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE id = auth.uid() AND lower(tier) = 'pro'
+    )
+  );

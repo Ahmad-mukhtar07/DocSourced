@@ -54,3 +54,18 @@ export async function deleteSnip(id) {
   const { error } = await supabaseClient.from(SNIPS_TABLE).delete().eq('id', id);
   if (error) throw new Error(error.message || 'Failed to delete snip');
 }
+
+/**
+ * Update page_title for a snip. RLS allows only own rows and Pro tier.
+ * @param {string} id - snips_history.id
+ * @param {string} pageTitle - New title (trimmed, max 1024 chars)
+ */
+export async function updateSnipPageTitle(id, pageTitle) {
+  if (!isSupabaseConfigured || !supabaseClient) throw new Error('Supabase not configured');
+  const title = String(pageTitle ?? '').trim().slice(0, 1024) || null;
+  const { error } = await supabaseClient
+    .from(SNIPS_TABLE)
+    .update({ page_title: title })
+    .eq('id', id);
+  if (error) throw new Error(error.message || 'Failed to update title');
+}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useFeatureAccess } from '../hooks/useFeatureAccess.js';
-import { getSnipsHistory, deleteSnip, getDriveThumbnailUrl } from '../lib/snipsHistoryService.js';
+import { getSnipsHistory, deleteSnip, updateSnipPageTitle, getDriveThumbnailUrl } from '../lib/snipsHistoryService.js';
 import { getDocSections, reinsertImageAtSection } from '../popup/messages.js';
 import './SnipHistory.css';
 
@@ -31,6 +31,9 @@ export function SnipHistory({ documentId, onShowUpgrade, disabled = false }) {
   const [sectionsLoading, setSectionsLoading] = useState(false);
   const [reinsertError, setReinsertError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [titleError, setTitleError] = useState(null);
 
   const loadSnips = useCallback(async () => {
     setLoading(true);
@@ -49,6 +52,11 @@ export function SnipHistory({ documentId, onShowUpgrade, disabled = false }) {
   useEffect(() => {
     if (canAccessSnipHistory) loadSnips();
   }, [canAccessSnipHistory, loadSnips]);
+
+  // Refetch list whenever the user expands the section (collapse → open)
+  useEffect(() => {
+    if (canAccessSnipHistory && !collapsed) loadSnips();
+  }, [canAccessSnipHistory, collapsed]);
 
   const filteredSnips = search.trim()
     ? snips.filter((s) => {
@@ -109,6 +117,31 @@ export function SnipHistory({ documentId, onShowUpgrade, disabled = false }) {
       setError('Failed to delete snip');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const startEditTitle = (snip) => {
+    setEditingId(snip.id);
+    setEditingTitle(snip.page_title || '');
+    setTitleError(null);
+  };
+
+  const cancelEditTitle = () => {
+    setEditingId(null);
+    setEditingTitle('');
+    setTitleError(null);
+  };
+
+  const saveEditTitle = async () => {
+    if (editingId == null) return;
+    setTitleError(null);
+    try {
+      await updateSnipPageTitle(editingId, editingTitle);
+      setSnips((prev) => prev.map((s) => (s.id === editingId ? { ...s, page_title: (editingTitle || '').trim() || null } : s)));
+      setEditingId(null);
+      setEditingTitle('');
+    } catch (e) {
+      setTitleError(e instanceof Error ? e.message : 'Failed to update title');
     }
   };
 
@@ -209,7 +242,42 @@ export function SnipHistory({ documentId, onShowUpgrade, disabled = false }) {
                     )}
                     <div className="snip-history__item-body">
                       {snip.domain && <span className="snip-history__domain">{snip.domain}</span>}
-                      <p className="snip-history__page-title">{snip.page_title || 'Untitled'}</p>
+                      {editingId === snip.id ? (
+                        <div className="snip-history__title-edit">
+                          <input
+                            type="text"
+                            className="snip-history__title-input"
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEditTitle();
+                              if (e.key === 'Escape') cancelEditTitle();
+                            }}
+                            placeholder="Page title"
+                            aria-label="Edit page title"
+                            autoFocus
+                          />
+                          <div className="snip-history__title-edit-actions">
+                            <button type="button" className="snip-history__btn snip-history__btn--reinsert" onClick={saveEditTitle}>Save</button>
+                            <button type="button" className="snip-history__btn snip-history__btn--delete" onClick={cancelEditTitle}>Cancel</button>
+                          </div>
+                          {titleError && <p className="snip-history__error">{titleError}</p>}
+                        </div>
+                      ) : (
+                        <p className="snip-history__page-title">
+                          <span>{snip.page_title || 'Untitled'}</span>
+                          <button
+                            type="button"
+                            className="snip-history__edit-title-btn"
+                            onClick={() => startEditTitle(snip)}
+                            disabled={disabled}
+                            title="Change page title"
+                            aria-label="Edit page title"
+                          >
+                            Edit
+                          </button>
+                        </p>
+                      )}
                       {snip.source_url ? (
                         <a
                           href={snip.source_url}
