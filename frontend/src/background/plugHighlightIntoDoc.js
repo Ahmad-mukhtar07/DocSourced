@@ -34,10 +34,20 @@ export async function plugHighlightIntoDoc(data, sourceTabId) {
     return;
   }
 
+  const pageUrl = data.pageUrl ?? '';
+  const domain = (() => {
+    try {
+      if (!pageUrl) return '';
+      const u = new URL(pageUrl);
+      return (u.hostname || '').replace(/^www\./i, '');
+    } catch (_) { return ''; }
+  })();
   const usage = await recordSnipAndCheckLimit({
     content: data.selectedText ?? '',
-    source_url: documentId ? `https://docs.google.com/document/d/${documentId}/edit` : '',
+    source_url: pageUrl,
     target_doc_id: documentId,
+    page_title: data.pageTitle ?? '',
+    domain,
   });
   if (usage.error === 'snip_limit_reached') {
     showNotification('Snip limit reached', 'You\'ve reached your monthly limit. Upgrade to add more.');

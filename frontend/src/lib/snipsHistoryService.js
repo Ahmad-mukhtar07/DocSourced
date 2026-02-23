@@ -9,16 +9,20 @@ import { getConnectedDocs } from './connectedDocsService.js';
 const SNIPS_TABLE = 'snips_history';
 
 /**
- * Fetch image snips for the current user, newest first, with doc title from connected_docs.
- * @returns {Promise<Array<{ id: string, source_url: string | null, page_title: string | null, domain: string | null, snippet_type: string | null, drive_url: string | null, target_doc_id: string | null, created_at: string | null, doc_title: string | null }>>}
+ * Fetch snips (image + text) for the current user, optionally filtered by target document.
+ * @param {string} [documentId] - When provided, only snips for this target_doc_id (Sources for this document).
+ * @returns {Promise<Array<{ id: string, content: string | null, source_url: string | null, page_title: string | null, domain: string | null, snippet_type: string | null, drive_url: string | null, target_doc_id: string | null, created_at: string | null, doc_title: string | null }>>}
  */
-export async function getSnipsHistory() {
+export async function getSnipsHistory(documentId = null) {
   if (!isSupabaseConfigured || !supabaseClient) return [];
-  const { data: snips, error } = await supabaseClient
+  let query = supabaseClient
     .from(SNIPS_TABLE)
-    .select('id, source_url, page_title, domain, snippet_type, drive_url, target_doc_id, created_at')
-    .eq('snippet_type', 'image')
+    .select('id, content, source_url, page_title, domain, snippet_type, drive_url, target_doc_id, created_at')
     .order('created_at', { ascending: false });
+  if (documentId) {
+    query = query.eq('target_doc_id', documentId);
+  }
+  const { data: snips, error } = await query;
   if (error) throw new Error(error.message || 'Failed to load snip history');
   const list = snips ?? [];
   if (list.length === 0) return [];

@@ -8,12 +8,28 @@ const STORAGE_KEY_ANON = 'eznote_supabase_anon_key';
 const STORAGE_KEY_TOKEN = 'eznote_supabase_access_token';
 
 /**
- * Call record_snip_and_check_limit RPC (text/usage only — no insert into snips_history).
- * @param {{ content?: string, source_url?: string, target_doc_id?: string }} params
+ * Parse domain from URL for storage (hostname without www).
+ * @param {string} url
+ * @returns {string}
+ */
+function parseDomain(url) {
+  if (!url || typeof url !== 'string') return '';
+  try {
+    const u = new URL(url.trim());
+    const host = u.hostname || '';
+    return host.replace(/^www\./i, '');
+  } catch (_) {
+    return '';
+  }
+}
+
+/**
+ * Call record_snip_and_check_limit RPC. When content is non-empty, inserts a text row into snips_history.
+ * @param {{ content?: string, source_url?: string, target_doc_id?: string, page_title?: string, domain?: string }} params
  * @returns {Promise<{ success?: boolean, error?: string, limit?: number }>}
  */
 export async function recordSnipAndCheckLimit(params = {}) {
-  const { content = '', source_url = '', target_doc_id = '' } = params;
+  const { content = '', source_url = '', target_doc_id = '', page_title = '', domain = '' } = params;
   const stored = await new Promise((resolve) => {
     chrome.storage.local.get([STORAGE_KEY_URL, STORAGE_KEY_ANON, STORAGE_KEY_TOKEN], resolve);
   });
@@ -24,6 +40,8 @@ export async function recordSnipAndCheckLimit(params = {}) {
     return { error: 'not_authenticated' };
   }
 
+  const contentTrim = String(content).trim();
+  const domainVal = domain || parseDomain(source_url);
   const rpcUrl = `${url.replace(/\/$/, '')}/rest/v1/rpc/record_snip_and_check_limit`;
   const res = await fetch(rpcUrl, {
     method: 'POST',
@@ -34,9 +52,11 @@ export async function recordSnipAndCheckLimit(params = {}) {
       Prefer: 'return=representation',
     },
     body: JSON.stringify({
-      p_content: String(content).slice(0, 10000),
+      p_content: contentTrim.slice(0, 500),
       p_source_url: String(source_url).slice(0, 2048),
       p_target_doc_id: String(target_doc_id).slice(0, 256),
+      p_page_title: String(page_title).slice(0, 1024),
+      p_domain: String(domainVal).slice(0, 512),
     }),
   });
 

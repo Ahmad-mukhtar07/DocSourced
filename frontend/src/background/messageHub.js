@@ -171,8 +171,15 @@ export async function handleMessage(msg, sender) {
       }
       const usage = await recordSnipAndCheckLimit({
         content: selectionData.selectedText ?? '',
-        source_url: documentId ? `https://docs.google.com/document/d/${documentId}/edit` : '',
+        source_url: selectionData.pageUrl ?? '',
         target_doc_id: documentId,
+        page_title: selectionData.pageTitle ?? '',
+        domain: selectionData.pageUrl ? (() => {
+          try {
+            const u = new URL(selectionData.pageUrl);
+            return (u.hostname || '').replace(/^www\./i, '');
+          } catch (_) { return ''; }
+        })() : '',
       });
       if (usage.error === 'snip_limit_reached') {
         return {
