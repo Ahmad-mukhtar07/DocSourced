@@ -1,0 +1,192 @@
+.doc-manager {
+  margin: 0.75rem 0;
+  text-align: left;
+}
+
+.doc-manager--loading,
+.doc-manager--error {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.5rem 0;
+}
+
+.doc-manager--error {
+  color: #fca5a5;
+}
+
+.doc-manager--error p {
+  margin: 0 0 0.5rem;
+}
+
+.doc-manager__label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin: 0 0 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.doc-manager__list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  min-height: 80px;
+  max-height: min(35vh, 280px);
+  overflow-y: auto;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.doc-manager__item {
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.doc-manager__item:last-child {
+  border-bottom: none;
+}
+
+.doc-manager__item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.doc-manager__item-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.doc-manager__item-btn--active {
+  background: rgba(26, 115, 232, 0.2);
+  color: rgba(255, 255, 255, 0.98);
+}
+
+.doc-manager__item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.doc-manager__item-badge {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.doc-manager__add {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px dashed rgba(255, 255, 255, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+}
+
+.doc-manager__add:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.doc-manager__back,
+.doc-manager__cancel,
+.doc-manager__retry {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  margin-right: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.doc-manager__back:hover:not(:disabled),
+.doc-manager__cancel:hover:not(:disabled),
+.doc-manager__retry:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.doc-manager__back {
+  margin-bottom: 0.75rem;
+}
+
+@media (prefers-color-scheme: light) {
+  .doc-manager--loading {
+    color: rgba(0, 0, 0, 0.65);
+  }
+
+  .doc-manager--error {
+    color: #b91c1c;
+  }
+
+  .doc-manager__label {
+    color: rgba(0, 0, 0, 0.85);
+  }
+
+  .doc-manager__list {
+    border-color: rgba(0, 0, 0, 0.12);
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .doc-manager__item {
+    border-bottom-color: rgba(0, 0, 0, 0.06);
+  }
+
+  .doc-manager__item-btn {
+    color: rgba(0, 0, 0, 0.85);
+  }
+
+  .doc-manager__item-btn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  .doc-manager__item-btn--active {
+    background: rgba(26, 115, 232, 0.12);
+    color: rgba(0, 0, 0, 0.9);
+  }
+
+  .doc-manager__add {
+    border-color: rgba(0, 0, 0, 0.25);
+    background: rgba(0, 0, 0, 0.04);
+    color: rgba(0, 0, 0, 0.9);
+  }
+
+  .doc-manager__add:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  .doc-manager__back,
+  .doc-manager__cancel,
+  .doc-manager__retry {
+    border-color: rgba(0, 0, 0, 0.2);
+    color: rgba(0, 0, 0, 0.7);
+  }
+
+  .doc-manager__back:hover:not(:disabled),
+  .doc-manager__cancel:hover:not(:disabled),
+  .doc-manager__retry:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.06);
+  }
+}

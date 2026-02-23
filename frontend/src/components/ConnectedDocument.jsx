@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { getPlugSelection, getDocSections, plugItInAtSection, getSnipUsage } from '../popup/messages.js';
+import { getPlugSelection, getDocSections, plugItInAtSection, getSnipUsage, setSelectedDoc } from '../popup/messages.js';
 import { useAuth } from '../hooks/useAuth.js';
+import { getConnectedDocs } from '../lib/connectedDocsService.js';
 import { UpgradeModal } from './UpgradeModal';
 import './ConnectedDocument.css';
 
@@ -8,7 +9,7 @@ import './ConnectedDocument.css';
  * Shows the currently connected document, "Snip and Plug", and "Change document".
  * "Plug it in" opens a section picker to choose where to insert the selected text.
  */
-export function ConnectedDocument({ documentName, onChangeDocument, disabled = false }) {
+export function ConnectedDocument({ documentId, documentName, onChangeDocument, onSwitchDocument, disabled = false }) {
   const { user: supabaseUser, syncSessionTokenToStorage } = useAuth();
   const [snipActive, setSnipActive] = useState(false);
   const snipActiveTimer = useRef(null);
@@ -26,6 +27,9 @@ export function ConnectedDocument({ documentName, onChangeDocument, disabled = f
   // Block Snip and Plug by default until we've queried usage (then allow only if under limit)
   const [snipUsage, setSnipUsage] = useState({ used: 0, limit: 25, allowed: false });
   const [snipUsageLoaded, setSnipUsageLoaded] = useState(false);
+  const [docDropdownOpen, setDocDropdownOpen] = useState(false);
+  const [connectedDocs, setConnectedDocs] = useState([]);
+  const docDropdownRef = useRef(null);
 
   const fetchSnipUsage = async () => {
     try {
@@ -62,6 +66,26 @@ export function ConnectedDocument({ documentName, onChangeDocument, disabled = f
       setSnipUsageLoaded(true);
     }
   }, [userId, syncSessionTokenToStorage]);
+
+  // Load connected docs for dropdown (when user is set)
+  useEffect(() => {
+    if (userId == null) return;
+    getConnectedDocs()
+      .then(setConnectedDocs)
+      .catch(() => setConnectedDocs([]));
+  }, [userId, documentId]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!docDropdownOpen) return;
+    const handleClickOutside = (e) => {
+      if (docDropdownRef.current && !docDropdownRef.current.contains(e.target)) {
+        setDocDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [docDropdownOpen]);
 
   const SNIP_SUCCESS_KEY = 'eznote_snip_insert_success';
 
@@ -244,6 +268,14 @@ export function ConnectedDocument({ documentName, onChangeDocument, disabled = f
     (snipActive ? ' connected-doc__btn--snip-active' : '') +
     (snipUsageLoaded && !snipUsage.allowed ? ' connected-doc__btn--snip-disabled' : '');
 
+  const handleSelectDoc = async (doc) => {
+    const res = await setSelectedDoc(doc.google_doc_id, doc.doc_title || 'Untitled');
+    if (res?.success) {
+      onSwitchDocument?.({ id: doc.google_doc_id, name: doc.doc_title || 'Untitled' });
+      setDocDropdownOpen(false);
+    }
+  };
+
   return (
     <div className="connected-doc">
       <UpgradeModal
@@ -251,7 +283,52 @@ export function ConnectedDocument({ documentName, onChangeDocument, disabled = f
         onClose={() => setShowUpgradeModal(false)}
         limit={upgradeModalLimit}
       />
-      <p className="connected-doc__label">Connected document</p>
+      <div className="connected-doc__row">
+        <span className="connected-doc__row-label">Active document</span>
+        <div className="connected-doc__dropdown" ref={docDropdownRef}>
+          <button
+            type="button"
+            className="connected-doc__dropdown-trigger"
+            onClick={() => setDocDropdownOpen((open) => !open)}
+            disabled={disabled}
+            aria-expanded={docDropdownOpen}
+            aria-haspopup="listbox"
+            aria-label="Change document"
+          >
+            <span className="connected-doc__dropdown-trigger-text">Change document</span>
+            <span className="connected-doc__dropdown-trigger-icon" aria-hidden>{docDropdownOpen ? '▲' : '▼'}</span>
+          </button>
+        {docDropdownOpen && (
+          <div className="connected-doc__dropdown-panel" role="listbox">
+            {connectedDocs.map((doc) => {
+              const isActive = documentId === doc.google_doc_id;
+              return (
+                <button
+                  key={doc.id}
+                  type="button"
+                  role="option"
+                  aria-selected={isActive}
+                  className={`connected-doc__dropdown-option ${isActive ? 'connected-doc__dropdown-option--active' : ''}`}
+                  onClick={() => handleSelectDoc(doc)}
+                >
+                  {doc.doc_title || 'Untitled'}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              className="connected-doc__dropdown-add"
+              onClick={() => {
+                setDocDropdownOpen(false);
+                onChangeDocument?.();
+              }}
+            >
+              + Connect new document
+            </button>
+          </div>
+        )}
+        </div>
+      </div>
       <p className="connected-doc__name">{documentName || 'Untitled'}</p>
       {plugStep === null && (
         <button
@@ -358,14 +435,6 @@ export function ConnectedDocument({ documentName, onChangeDocument, disabled = f
       </button>
       <p className="connected-doc__hint connected-doc__hint--magic">AI-powered cleanup and structure for your doc. Coming soon.</p>
       <p className="connected-doc__hint connected-doc__hint--cursor">Tip: Open your doc in a new tab (below) to add at cursor with Plug it in or Snip and Plug.</p>
-      <button
-        type="button"
-        className="connected-doc__change"
-        onClick={onChangeDocument}
-        disabled={disabled}
-      >
-        Change document
-      </button>
     </div>
   );
 }

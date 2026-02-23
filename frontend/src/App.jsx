@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { getAuthStatus, authConnect, authDisconnect, getDocsList, setSelectedDoc } from './popup/messages.js';
 import { ConnectGoogleDocsButton } from './components/ConnectGoogleDocsButton';
 import { DocsList } from './components/DocsList';
+import { DocumentManager } from './components/DocumentManager';
 import { ConnectedDocument } from './components/ConnectedDocument';
 import { DocPreview } from './components/DocPreview';
 import { LoginPage } from './components/LoginPage';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured, supabaseUrl, supabaseAnonKey } from './config/supabase-config.js';
+import { addConnectedDoc } from './lib/connectedDocsService.js';
 import './App.css';
 
 if (isSupabaseConfigured && supabaseUrl && typeof chrome?.storage?.local?.set === 'function') {
@@ -28,6 +30,7 @@ function App() {
   const [documentId, setDocumentId] = useState(null);
   const [documentName, setDocumentName] = useState(null);
   const [showDocList, setShowDocList] = useState(false);
+  const [showDocumentManager, setShowDocumentManager] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [apiLoading, setApiLoading] = useState(false);
 
@@ -84,12 +87,22 @@ function App() {
     setShowDocList(true);
   };
 
-  const handleDocumentSelected = (doc) => {
+  const handleDocumentSelected = useCallback(async (doc) => {
+    if (isSupabaseConfigured && supabaseUser) {
+      try {
+        await addConnectedDoc(doc.id, doc.name || 'Untitled');
+      } catch (_) {
+        // still set selection locally if Supabase add fails
+      }
+    }
+    const res = await setSelectedDoc(doc.id, doc.name || 'Untitled');
+    if (!res?.success) return;
     setDocumentId(doc.id);
     setDocumentName(doc.name || 'Untitled');
     setStatus(STATUS.DOCUMENT_SELECTED);
     setShowDocList(false);
-  };
+    setShowDocumentManager(false);
+  }, [supabaseUser]);
 
   const handleDisconnect = async () => {
     setApiLoading(true);
@@ -107,7 +120,11 @@ function App() {
   };
 
   const handleChangeDocument = () => {
-    setShowDocList(true);
+    if (isSupabaseConfigured && supabaseUser) {
+      setShowDocumentManager(true);
+    } else {
+      setShowDocList(true);
+    }
   };
 
   // (1) Unauthenticated → login only
@@ -127,7 +144,7 @@ function App() {
     );
   }
 
-  const hasSelectedDoc = status === STATUS.DOCUMENT_SELECTED && !showDocList;
+  const hasSelectedDoc = status === STATUS.DOCUMENT_SELECTED && !showDocList && !showDocumentManager;
   const isConnected = status !== STATUS.NOT_CONNECTED;
   const statusLabel =
     status === STATUS.DOCUMENT_SELECTED
@@ -174,8 +191,13 @@ function App() {
         {hasSelectedDoc && (
           <>
             <ConnectedDocument
+              documentId={documentId}
               documentName={documentName || 'Untitled'}
               onChangeDocument={handleChangeDocument}
+              onSwitchDocument={(doc) => {
+                setDocumentId(doc.id);
+                setDocumentName(doc.name || 'Untitled');
+              }}
               disabled={apiLoading}
             />
             <DocPreview documentId={documentId} />
@@ -186,7 +208,16 @@ function App() {
           <ConnectGoogleDocsButton onSuccess={handleConnectSuccess} disabled={apiLoading} />
         )}
 
-        {isConnected && showDocList && (
+        {isConnected && showDocumentManager && (
+          <DocumentManager
+            currentDocumentId={documentId}
+            onSelectDocument={handleDocumentSelected}
+            onClose={() => setShowDocumentManager(false)}
+            disabled={apiLoading}
+          />
+        )}
+
+        {isConnected && showDocList && !showDocumentManager && (
           <DocsList
             onSelectDocument={handleDocumentSelected}
             onError={() => setStatus(STATUS.NOT_CONNECTED)}
