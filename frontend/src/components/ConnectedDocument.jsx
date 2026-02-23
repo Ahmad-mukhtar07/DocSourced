@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { getPlugSelection, getDocSections, plugItInAtSection, getSnipUsage, setSelectedDoc } from '../popup/messages.js';
 import { useAuth } from '../hooks/useAuth.js';
+import { useFeatureAccess } from '../hooks/useFeatureAccess.js';
 import { getConnectedDocs } from '../lib/connectedDocsService.js';
 import { UpgradeModal } from './UpgradeModal';
 import './ConnectedDocument.css';
@@ -23,7 +24,9 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
   const [snipError, setSnipError] = useState(null);
   const [snipSuccess, setSnipSuccess] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeModalReason, setUpgradeModalReason] = useState('snip_limit');
   const [upgradeModalLimit, setUpgradeModalLimit] = useState(25);
+  const { canAccessSnipHistory } = useFeatureAccess();
   // Block Snip and Plug by default until we've queried usage (then allow only if under limit)
   const [snipUsage, setSnipUsage] = useState({ used: 0, limit: 25, allowed: false });
   const [snipUsageLoaded, setSnipUsageLoaded] = useState(false);
@@ -79,6 +82,17 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
       .then(setConnectedDocs)
       .catch(() => setConnectedDocs([]));
   }, [userId, documentId]);
+
+  // After downgrade to free, excess docs are removed server-side. If current doc is no longer in the list, sync to the remaining one.
+  useEffect(() => {
+    if (!documentId || connectedDocs.length === 0) return;
+    const currentInList = connectedDocs.some((d) => d.google_doc_id === documentId);
+    if (currentInList) return;
+    const remaining = connectedDocs[0];
+    setSelectedDoc(remaining.google_doc_id, remaining.doc_title || 'Untitled').then((res) => {
+      if (res?.success) onSwitchDocument?.({ id: remaining.google_doc_id, name: remaining.doc_title || 'Untitled' });
+    });
+  }, [connectedDocs, documentId, onSwitchDocument]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -246,6 +260,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
         setPlugSections([]);
         setPlugError(null);
         setUpgradeModalLimit(res?.limit ?? 25);
+        setUpgradeModalReason('snip_limit');
         setShowUpgradeModal(true);
         setSnipUsage((prev) => ({ ...prev, allowed: false }));
       } else {
@@ -286,6 +301,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
       <UpgradeModal
         open={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
+        reason={upgradeModalReason}
         limit={upgradeModalLimit}
       />
       <div className="connected-doc__row">
@@ -443,6 +459,22 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
             Cancel
           </button>
         </div>
+      )}
+      {canAccessSnipHistory ? (
+        <p className="connected-doc__hint">Snip History (Pro) — view past snips here in a future update.</p>
+      ) : (
+        <button
+          type="button"
+          className="connected-doc__btn connected-doc__btn--secondary"
+          onClick={() => {
+            setUpgradeModalReason('snip_history');
+            setShowUpgradeModal(true);
+          }}
+          disabled={disabled}
+          title="Upgrade to Pro to access Snip History"
+        >
+          Snip History <span className="connected-doc__pro-badge">Pro</span>
+        </button>
       )}
       <button
         type="button"

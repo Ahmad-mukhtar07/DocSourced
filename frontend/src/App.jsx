@@ -6,6 +6,7 @@ import { DocumentManager } from './components/DocumentManager';
 import { ConnectedDocument } from './components/ConnectedDocument';
 import { DocPreview } from './components/DocPreview';
 import { LoginPage } from './components/LoginPage';
+import { UpgradeModal } from './components/UpgradeModal';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured, supabaseUrl, supabaseAnonKey } from './config/supabase-config.js';
 import { addConnectedDoc } from './lib/connectedDocsService.js';
@@ -33,6 +34,7 @@ function App() {
   const [showDocumentManager, setShowDocumentManager] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [apiLoading, setApiLoading] = useState(false);
+  const [upgradeModal, setUpgradeModal] = useState({ open: false, reason: 'snip_limit' });
 
   // Route guard: only show login when auth is resolved and there is no session (no flash).
   const showSupabaseLogin = isSupabaseConfigured && !authLoading && !supabaseUser;
@@ -91,8 +93,12 @@ function App() {
     if (isSupabaseConfigured && supabaseUser) {
       try {
         await addConnectedDoc(doc.id, doc.name || 'Untitled');
-      } catch (_) {
-        // still set selection locally if Supabase add fails
+      } catch (e) {
+        if (e?.code === 'DOC_LIMIT_REACHED') {
+          setUpgradeModal({ open: true, reason: 'doc_limit' });
+          return;
+        }
+        // other errors: still try to set selection locally
       }
     }
     const res = await setSelectedDoc(doc.id, doc.name || 'Untitled');
@@ -155,6 +161,11 @@ function App() {
 
   return (
     <div className="app app--popup">
+      <UpgradeModal
+        open={upgradeModal.open}
+        onClose={() => setUpgradeModal((m) => ({ ...m, open: false }))}
+        reason={upgradeModal.reason}
+      />
       <header className="app__header">
         <div className="app__header-left">
           <h1 className="app__title">EZ-NoteTaker</h1>

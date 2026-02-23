@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { getConnectedDocs, addConnectedDoc } from '../lib/connectedDocsService.js';
 import { setSelectedDoc } from '../popup/messages.js';
+import { useFeatureAccess } from '../hooks/useFeatureAccess.js';
 import { DocsList } from './DocsList.jsx';
+import { UpgradeModal } from './UpgradeModal.jsx';
 import './DocumentManager.css';
 
 /**
  * Manages connected documents: list from Supabase, switch active, or add new (Drive list).
- * Active document is persisted via setSelectedDoc (extension storage).
+ * Free tier: one doc only — "Connect new document" shows upgrade when limit reached.
  */
 export function DocumentManager({
   currentDocumentId,
@@ -14,10 +16,12 @@ export function DocumentManager({
   onClose,
   disabled = false,
 }) {
+  const { canUseMultipleDocs } = useFeatureAccess();
   const [docs, setDocs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mode, setMode] = useState('list'); // 'list' | 'add'
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const didInjectCurrentRef = useRef(false);
 
   const loadDocs = async () => {
@@ -75,8 +79,20 @@ export function DocumentManager({
         setError(res?.error || 'Failed to set document');
       }
     } catch (e) {
+      if (e?.code === 'DOC_LIMIT_REACHED') {
+        setShowUpgradeModal(true);
+        return;
+      }
       setError(e instanceof Error ? e.message : 'Failed to add document');
     }
+  };
+
+  const handleConnectNewClick = () => {
+    if (!canUseMultipleDocs && docs.length >= 1) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    setMode('add');
   };
 
   if (mode === 'add') {
@@ -123,6 +139,11 @@ export function DocumentManager({
 
   return (
     <div className="doc-manager">
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="doc_limit"
+      />
       <p className="doc-manager__label">Select active document (used for Plug and Snip):</p>
       <ul className="doc-manager__list" role="listbox">
         {docs.map((doc) => {
@@ -147,8 +168,9 @@ export function DocumentManager({
       <button
         type="button"
         className="doc-manager__add"
-        onClick={() => setMode('add')}
+        onClick={handleConnectNewClick}
         disabled={disabled}
+        title={!canUseMultipleDocs && docs.length >= 1 ? 'Upgrade to Pro to connect more documents' : undefined}
       >
         + Connect new document
       </button>

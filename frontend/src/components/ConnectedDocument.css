@@ -245,6 +245,23 @@
   outline-offset: 2px;
 }
 
+.connected-doc__btn--secondary {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.connected-doc__btn--secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.connected-doc__pro-badge {
+  font-size: 0.7em;
+  opacity: 0.9;
+  margin-left: 0.25rem;
+}
+
 .connected-doc__btn--plug {
   background: transparent;
   color: rgba(255, 255, 255, 0.95);
