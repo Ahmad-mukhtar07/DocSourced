@@ -141,7 +141,7 @@ export function SnipHistory({ documentId, onShowUpgrade, disabled = false }) {
       const res = await reinsertImageAtSection(
         reinsertSnip.drive_url,
         section.index,
-        { pageUrl: reinsertSnip.source_url || '', pageTitle: reinsertSnip.page_title || '' }
+        { pageUrl: reinsertSnip.source_url || '', pageTitle: reinsertSnip.page_title || '', snipId: reinsertSnip.id }
       );
       if (res?.success) {
         setReinsertSnip(null);

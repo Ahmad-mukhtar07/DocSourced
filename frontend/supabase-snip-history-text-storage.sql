@@ -23,6 +23,7 @@ DECLARE
   v_limit int := 25;
   v_content_trim text;
   v_domain text;
+  v_snip_id uuid;
 BEGIN
   v_uid := auth.uid();
   IF v_uid IS NULL THEN
@@ -72,7 +73,8 @@ BEGIN
       'text',
       left(trim(p_target_doc_id), 256),
       NULL
-    );
+    )
+    RETURNING id INTO v_snip_id;
   END IF;
 
   v_period := to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM');
@@ -81,7 +83,7 @@ BEGIN
   ON CONFLICT (user_id, period)
   DO UPDATE SET snip_count = public.user_usage.snip_count + 1;
 
-  RETURN jsonb_build_object('success', true);
+  RETURN jsonb_build_object('success', true, 'snip_id', v_snip_id);
 
 EXCEPTION
   WHEN OTHERS THEN

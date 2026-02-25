@@ -11,6 +11,7 @@ import {
   insertImageWithSourceAtPosition as insertImageWithSourceAtPositionLib,
   getDocumentSections as getDocumentSectionsLib,
 } from '../lib/docsInsert.js';
+import { formatReferences as formatReferencesLib } from '../lib/formatReferences.js';
 
 const DRIVE_API_MEDIA = 'https://www.googleapis.com/drive/v3/files';
 
@@ -87,3 +88,4 @@ export const insertImageWithSource = insertImageLib;
 export const insertImageWithSourceAtPosition = insertImageWithSourceAtPositionLib;
 export const getDocumentSections = getDocumentSectionsLib;
 export const fetchDocsList = fetchDocsListLib;
+export const formatReferences = formatReferencesLib;

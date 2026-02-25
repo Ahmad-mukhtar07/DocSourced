@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { getPlugSelection, getDocSections, plugItInAtSection, getSnipUsage, setSelectedDoc } from '../popup/messages.js';
+import { getPlugSelection, getDocSections, plugItInAtSection, getSnipUsage, setSelectedDoc, formatReferences } from '../popup/messages.js';
 import { useAuth } from '../hooks/useAuth.js';
 import { useFeatureAccess } from '../hooks/useFeatureAccess.js';
 import { getConnectedDocs, removeConnectedDoc } from '../lib/connectedDocsService.js';
@@ -35,6 +35,9 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
   const [connectedDocs, setConnectedDocs] = useState([]);
   const [collapsed, setCollapsed] = useState(false);
   const docDropdownRef = useRef(null);
+  const [formatRefLoading, setFormatRefLoading] = useState(false);
+  const [formatRefError, setFormatRefError] = useState(null);
+  const [formatRefSuccess, setFormatRefSuccess] = useState(null);
 
   useEffect(() => {
     if (collapsed) setDocDropdownOpen(false);
@@ -284,6 +287,25 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
     setPlugError(null);
   };
 
+  const handleFormatReferences = async () => {
+    setFormatRefError(null);
+    setFormatRefSuccess(null);
+    setFormatRefLoading(true);
+    try {
+      const res = await formatReferences();
+      if (res?.success) {
+        setFormatRefSuccess(res.message || 'References formatted.');
+        setTimeout(() => setFormatRefSuccess(null), 4000);
+      } else {
+        setFormatRefError(res?.error || 'Format failed');
+      }
+    } catch (e) {
+      setFormatRefError(e instanceof Error ? e.message : 'Format failed');
+    } finally {
+      setFormatRefLoading(false);
+    }
+  };
+
   const snipClass =
     'connected-doc__btn connected-doc__btn--snip' +
     (snipActive ? ' connected-doc__btn--snip-active' : '') +
@@ -497,6 +519,25 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
             Cancel
           </button>
         </div>
+      )}
+      {canAccessSnipHistory && (
+        <>
+          <button
+            type="button"
+            className="connected-doc__btn connected-doc__btn--format-ref"
+            onClick={handleFormatReferences}
+            disabled={disabled || formatRefLoading || !documentId}
+            title={!documentId ? 'Select a document first' : 'Replace inline sources with superscript numbers and add a Sources list at the bottom'}
+          >
+            {formatRefLoading ? 'Formatting…' : 'Format References'}
+          </button>
+          {formatRefError && (
+            <p className="connected-doc__plug-error" role="alert">{formatRefError}</p>
+          )}
+          {formatRefSuccess && (
+            <p className="connected-doc__plug-success">{formatRefSuccess}</p>
+          )}
+        </>
       )}
       <SnipHistory
         documentId={documentId}

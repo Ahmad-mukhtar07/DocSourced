@@ -91,10 +91,19 @@ export async function getSnipUsage() {
 }
 
 /**
+ * Format References: replace SNIP_REF_ inline source lines with superscript numbers and append Sources list. Pro-only.
+ * @returns {Promise<{ success: boolean, message?: string, error?: string, refsCount?: number }>}
+ */
+export async function formatReferences() {
+  return sendMessage({ type: 'FORMAT_REFERENCES' });
+}
+
+/**
  * Reinsert an image from Snip History into the current doc at the given section index.
+ * Uses existing snip_id for the source-line marker so references stay linked to the same DB record.
  * @param {string} driveUrl - Image URL (Drive link)
  * @param {number} insertIndex - Section index from getDocSections
- * @param {{ pageUrl?: string, pageTitle?: string }} meta - Optional source metadata
+ * @param {{ pageUrl?: string, pageTitle?: string, snipId?: string | null }} meta - Source metadata and snip UUID for marker
  * @returns {Promise<{ success: boolean, error?: string }>}
  */
 export async function reinsertImageAtSection(driveUrl, insertIndex, meta = {}) {
@@ -104,5 +113,6 @@ export async function reinsertImageAtSection(driveUrl, insertIndex, meta = {}) {
     insertIndex,
     pageUrl: meta.pageUrl ?? '',
     pageTitle: meta.pageTitle ?? '',
+    snipId: meta.snipId ?? null,
   });
 }

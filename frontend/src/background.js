@@ -63,6 +63,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     'REINSERT_IMAGE_AT_SECTION',
     'GET_DOC_PREVIEW',
     'GET_SNIP_USAGE',
+    'FORMAT_REFERENCES',
   ];
   if (hubTypes.includes(msg?.type)) {
     handleMessage(msg, sender)

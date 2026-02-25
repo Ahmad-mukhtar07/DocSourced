@@ -9,7 +9,7 @@ import { ensureResearchSnipsFolder, uploadImageToDrive } from './googleDrive.js'
 import { insertImageWithSource, insertImageWithSourceAtPosition } from './googleDocs.js';
 import { showNotification } from './notifications.js';
 import { tryPasteImageAtCursorInDocTab } from './pasteAtCursor.js';
-import { recordSnipAndCheckLimit, recordImageSnipAndCheckLimit } from './snipUsage.js';
+import { recordSnipAndCheckLimit, recordImageSnipAndCheckLimit, getSnipsMetadata } from './snipUsage.js';
 
 const SNIP_OVERLAY_PATH = 'snipOverlay.js';
 const SNIP_INSERT_INDEX_KEY = 'eznote_snip_insert_index';
@@ -103,7 +103,7 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
     }
   })();
   const timestamp = new Date().toISOString();
-  const sourceText = '\nSource: ' + pageTitle + ' ' + timestamp;
+  let sourceText = '';
 
   const insertIndex = await getSnipInsertIndex();
   await clearSnipInsertIndex();
@@ -129,6 +129,8 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
       await notifyAndRemoveOverlay(tabId, 'Snip and Plug failed', usage.error);
       return;
     }
+    const snipId = usage.snip_id ?? null;
+    sourceText = '\nSource: ' + pageTitle;
   }
 
   const pastedAtCursor = willTryPaste && (await tryPasteImageAtCursorInDocTab(
@@ -165,6 +167,7 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
 
   // When willTryPaste we already recorded one slot (paste path); don't record again if we fell through to API path.
   const alreadyRecorded = willTryPaste;
+  let snipIdForInsert = null;
 
   try {
     await withTokenRetry(async (token) => {
@@ -190,11 +193,12 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
         if (usage.error) {
           throw new Error(usage.error);
         }
+        snipIdForInsert = usage.snip_id ?? null;
       }
       if (typeof insertIndex === 'number') {
-        await insertImageWithSourceAtPosition(documentId, token, { ...imageData, imageUrl }, insertIndex);
+        await insertImageWithSourceAtPosition(documentId, token, { ...imageData, imageUrl, snipId: snipIdForInsert }, insertIndex, { getSnipsMetadata });
       } else {
-        await insertImageWithSource(documentId, token, { ...imageData, imageUrl });
+        await insertImageWithSource(documentId, token, { ...imageData, imageUrl, snipId: snipIdForInsert }, { getSnipsMetadata });
       }
     });
     if (sessionStorage) await sessionStorage.set({ [SNIP_INSERT_SUCCESS_KEY]: true });

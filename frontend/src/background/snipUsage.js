@@ -72,7 +72,7 @@ export async function recordSnipAndCheckLimit(params = {}) {
   if (data?.error) {
     return { error: data.error, limit: data.limit };
   }
-  return { success: true };
+  return { success: true, snip_id: data?.snip_id ?? null };
 }
 
 /**
@@ -128,7 +128,7 @@ export async function recordImageSnipAndCheckLimit(params = {}) {
   if (data?.error) {
     return { error: data.error, limit: data.limit };
   }
-  return { success: true };
+  return { success: true, snip_id: data?.snip_id ?? null };
 }
 
 /**
@@ -171,4 +171,37 @@ export async function getSnipUsage() {
     limit: typeof data.limit === 'number' ? data.limit : 25,
     allowed: data.allowed !== false,
   };
+}
+
+/**
+ * Fetch source metadata for given snip ids from snips_history (RLS applies).
+ * Used by Format References to resolve SNIP_REF_ named ranges.
+ * @param {string[]} ids - snips_history.id (UUIDs)
+ * @returns {Promise<Array<{ id: string, source_url: string | null, page_title: string | null, domain: string | null }>>}
+ */
+export async function getSnipsMetadata(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+  const stored = await new Promise((resolve) => {
+    chrome.storage.local.get([STORAGE_KEY_URL, STORAGE_KEY_ANON, STORAGE_KEY_TOKEN], resolve);
+  });
+  const url = stored[STORAGE_KEY_URL];
+  const anonKey = stored[STORAGE_KEY_ANON];
+  const token = stored[STORAGE_KEY_TOKEN];
+  if (!url || !anonKey || !token) return [];
+
+  const uniqueIds = [...new Set(ids.map((id) => String(id).trim()).filter(Boolean))];
+  if (uniqueIds.length === 0) return [];
+  const inFilter = uniqueIds.join(',');
+  const restUrl = `${url.replace(/\/$/, '')}/rest/v1/snips_history?id=in.(${inFilter})&select=id,source_url,page_title,domain`;
+  const res = await fetch(restUrl, {
+    method: 'GET',
+    headers: {
+      Apikey: anonKey,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!res.ok) return [];
+  const data = await res.json().catch(() => []);
+  return Array.isArray(data) ? data : [];
 }

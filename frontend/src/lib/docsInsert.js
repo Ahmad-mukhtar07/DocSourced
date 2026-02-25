@@ -1,10 +1,13 @@
 /**
  * Append highlighted quote and source to a Google Doc via Docs API batchUpdate.
- * Inserts in academic style: quoted paragraph, then "Source: [title](url)" and timestamp.
- * Uses endOfSegmentLocation to append (avoids index/segment mismatch with tabs).
+ * Inserts only visible "Source: {page_title}" (hyperlinked to source_url). Snip id is stored in a
+ * Named Range over that source line (SNIP_REF_{snip_id}) for later lookup—no visible marker in body.
  */
 
 const DOCS_API_BASE = 'https://docs.googleapis.com/v1/documents';
+
+/** Named range name prefix; full name is SNIP_REF_{uuid} so the doc can be scanned for references. */
+const SNIP_REF_PREFIX = 'SNIP_REF_';
 
 /**
  * Get the end index of the document body (0-based, position after last character).
@@ -45,10 +48,49 @@ const BULLET_PATTERN = /^[\s\t]*([•·▪◦\-*]\s+)/;
 const NUMBERED_PATTERN = /^[\s\t]*(\d+[.)]\s+)/;
 
 /**
- * Parse selected text into lines; classify bullet/numbered and strip prefix for list lines.
- * @returns {{ textToInsert: string, bulletRanges: Array<{ start: number, end: number }>, numberedRanges: Array<{ start: number, end: number }> }}
+ * Create a Named Range over the given range so the source line can be found by snip_id later.
+ * Name format: SNIP_REF_{snip_id}. Fails silently if snipId is missing or API errors.
  */
-function parseSelectionForInsert(selectedText, sourceLabel, title, timeStr) {
+async function createSnipNamedRange(documentId, accessToken, startIndex, endIndex, snipId) {
+  if (!snipId || typeof startIndex !== 'number' || typeof endIndex !== 'number') return;
+  const name = SNIP_REF_PREFIX + snipId;
+  const batchUrl = `${DOCS_API_BASE}/${documentId}:batchUpdate`;
+  const res = await fetch(batchUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      requests: [
+        {
+          createNamedRange: {
+            name,
+            range: { segmentId: '', startIndex, endIndex },
+          },
+        },
+      ],
+    }),
+  });
+  if (!res.ok) {
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('[EZ-Note] createNamedRange failed', res.status, await res.text().catch(() => ''));
+    }
+  }
+}
+
+/** Regex to find SNIP_REF_ named range names in document.namedRanges; capture is the name after prefix. */
+export const SNIP_REF_NAMED_RANGE_PREFIX = SNIP_REF_PREFIX;
+
+/**
+ * Parse selected text into lines; classify bullet/numbered and strip prefix for list lines.
+ * Builds source line as "Source: {title}" only (no marker in body).
+ * @param {string} selectedText
+ * @param {string} sourceLabel - e.g. '\nSource: '
+ * @param {string} title - page title (visible, will be linked)
+ * @returns {{ textToInsert: string, bulletRanges: Array<{ start: number, end: number }>, numberedRanges: Array<{ start: number, end: number }>, quoteLen: number }}
+ */
+function parseSelectionForInsert(selectedText, sourceLabel, title) {
   const lines = selectedText.split(/\n/);
   const parts = [];
   const bulletRanges = [];
@@ -80,26 +122,27 @@ function parseSelectionForInsert(selectedText, sourceLabel, title, timeStr) {
   }
 
   const quoteText = parts.join('\n');
-  const fullText = '\n' + quoteText + sourceLabel + title + timeStr;
+  const sourceLine = sourceLabel + title;
+  const fullText = '\n' + quoteText + sourceLine;
   return { textToInsert: fullText, bulletRanges, numberedRanges, quoteLen: quoteText.length };
 }
 
 /**
  * Insert highlighted text and source link into the connected Google Doc.
- * Preserves bullet and numbered list lines as Doc lists.
+ * Visible: "Source: {page_title}" (linked to pageUrl). Snip id stored in Named Range SNIP_REF_{snipId} over that line.
+ * @param {{ selectedText: string, pageUrl: string, pageTitle: string, snipId?: string | null }} data
+ * @param {{ getSnipsMetadata?: (ids: string[]) => Promise<Array<...>> }} [options] - unused; refs are only converted by Format References
  */
-export async function insertHighlightToDoc(documentId, accessToken, data) {
-  const { selectedText, pageUrl, pageTitle, timestamp } = data;
+export async function insertHighlightToDoc(documentId, accessToken, data, options = {}) {
+  const { selectedText, pageUrl, pageTitle, snipId } = data;
   const title = pageTitle || 'Untitled';
   const text = selectedText || '';
-  const sourceLabel = '\nSource: ';
-  const timeStr = ` ${timestamp}`;
 
+  const sourceLabel = '\nSource: ';
   const { textToInsert: fullText, bulletRanges, numberedRanges, quoteLen } = parseSelectionForInsert(
     text,
     sourceLabel,
-    title,
-    timeStr
+    title
   );
 
   const requests = [
@@ -227,6 +270,10 @@ export async function insertHighlightToDoc(documentId, accessToken, data) {
     }
     throw new Error(message);
   }
+
+  const sourceLineStart = sourceStart - 9;
+  const sourceLineEnd = sourceEnd;
+  await createSnipNamedRange(documentId, accessToken, sourceLineStart, sourceLineEnd, snipId);
 }
 
 const HEADING_STYLES = new Set(['HEADING_1', 'HEADING_2', 'HEADING_3', 'HEADING_4', 'HEADING_5', 'HEADING_6', 'TITLE', 'SUBTITLE']);
@@ -312,20 +359,20 @@ export async function getDocumentSections(documentId, accessToken) {
 }
 
 /**
- * Insert highlighted text at a specific index. Same formatting as insertHighlightToDoc (bullets, link).
+ * Insert highlighted text at a specific index. Same formatting as insertHighlightToDoc (bullets, link, named range).
+ * @param {{ selectedText: string, pageUrl: string, pageTitle: string, snipId?: string | null }} data
+ * @param {{ getSnipsMetadata?: (ids: string[]) => Promise<Array<...>> }} [options] - unused; refs only converted by Format References
  */
-export async function insertHighlightAtPosition(documentId, accessToken, data, insertIndex) {
-  const { selectedText, pageUrl, pageTitle, timestamp } = data;
+export async function insertHighlightAtPosition(documentId, accessToken, data, insertIndex, options = {}) {
+  const { selectedText, pageUrl, pageTitle, snipId } = data;
   const title = pageTitle || 'Untitled';
   const text = selectedText || '';
-  const sourceLabel = '\nSource: ';
-  const timeStr = ` ${timestamp}`;
 
+  const sourceLabel = '\nSource: ';
   const { textToInsert: fullText, bulletRanges, numberedRanges, quoteLen } = parseSelectionForInsert(
     text,
     sourceLabel,
-    title,
-    timeStr
+    title
   );
 
   const requests = [
@@ -423,18 +470,23 @@ export async function insertHighlightAtPosition(documentId, accessToken, data, i
     const body = await res.text();
     throw new Error(body?.slice(0, 150) || 'Docs API error');
   }
+
+  const sourceLineStart = sourceStart - 9;
+  const sourceLineEnd = sourceEnd;
+  await createSnipNamedRange(documentId, accessToken, sourceLineStart, sourceLineEnd, snipId);
 }
 
 /**
  * Insert an inline image and source caption into the Google Doc.
- * @param {string} documentId - Google Doc id
- * @param {string} accessToken - OAuth access token
- * @param {{ imageUrl: string, imageWidthPt: number, imageHeightPt: number, pageUrl: string, pageTitle: string, timestamp: string }} data
+ * Visible: "Source: {page_title}" (linked to pageUrl). Snip id stored in Named Range SNIP_REF_{snipId} over that line.
+ * @param {{ imageUrl: string, imageWidthPt: number, imageHeightPt: number, pageUrl: string, pageTitle: string, snipId?: string | null }} data
+ * @param {{ getSnipsMetadata?: (ids: string[]) => Promise<Array<...>> }} [options] - unused; refs only converted by Format References
  */
-export async function insertImageWithSource(documentId, accessToken, data) {
-  const { imageUrl, imageWidthPt, imageHeightPt, pageUrl, pageTitle, timestamp } = data;
+export async function insertImageWithSource(documentId, accessToken, data, options = {}) {
+  const { imageUrl, imageWidthPt, imageHeightPt, pageUrl, pageTitle, snipId } = data;
   const title = pageTitle || 'Untitled';
-  const sourceText = '\nSource: ' + title + ' ' + timestamp;
+
+  const sourceText = '\nSource: ' + title;
 
   const requests = [
     {
@@ -517,19 +569,23 @@ export async function insertImageWithSource(documentId, accessToken, data) {
     }
     throw new Error(message);
   }
+
+  const sourceLineStart = endAfterInsert - sourceLen;
+  const sourceLineEnd = endAfterInsert;
+  await createSnipNamedRange(documentId, accessToken, sourceLineStart, sourceLineEnd, snipId);
 }
 
 /**
  * Insert an inline image and source caption at a specific index (for section placement).
- * @param {string} documentId
- * @param {string} accessToken
- * @param {{ imageUrl: string, imageWidthPt: number, imageHeightPt: number, pageUrl: string, pageTitle: string, timestamp: string }} data
- * @param {number} insertIndex
+ * Visible: "Source: {page_title}" (linked). Snip id in Named Range SNIP_REF_{snipId}.
+ * @param {{ imageUrl: string, imageWidthPt: number, imageHeightPt: number, pageUrl: string, pageTitle: string, snipId?: string | null }} data
+ * @param {{ getSnipsMetadata?: (ids: string[]) => Promise<Array<...>> }} [options] - unused; refs only converted by Format References
  */
-export async function insertImageWithSourceAtPosition(documentId, accessToken, data, insertIndex) {
-  const { imageUrl, imageWidthPt, imageHeightPt, pageUrl, pageTitle, timestamp } = data;
+export async function insertImageWithSourceAtPosition(documentId, accessToken, data, insertIndex, options = {}) {
+  const { imageUrl, imageWidthPt, imageHeightPt, pageUrl, pageTitle, snipId } = data;
   const title = pageTitle || 'Untitled';
-  const sourceText = '\nSource: ' + title + ' ' + timestamp;
+
+  const sourceText = '\nSource: ' + title;
 
   const requests = [
     {
@@ -606,4 +662,8 @@ export async function insertImageWithSourceAtPosition(documentId, accessToken, d
     }
     throw new Error(message);
   }
+
+  const sourceLineStart = insertIndex + 1;
+  const sourceLineEnd = sourceLineStart + sourceText.length;
+  await createSnipNamedRange(documentId, accessToken, sourceLineStart, sourceLineEnd, snipId);
 }

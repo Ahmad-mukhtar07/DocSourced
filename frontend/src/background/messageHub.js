@@ -12,10 +12,11 @@ import {
   getDocumentSections,
   insertHighlightAtPosition,
   insertImageWithSourceAtPosition,
+  formatReferences,
 } from './googleDocs.js';
 import { createNewDoc } from './googleDrive.js';
 import { getSelectionAndPageInfo } from './captureSelection.js';
-import { recordSnipAndCheckLimit, getSnipUsage } from './snipUsage.js';
+import { recordSnipAndCheckLimit, getSnipUsage, getSnipsMetadata } from './snipUsage.js';
 import { log } from './logger.js';
 
 /**
@@ -197,8 +198,9 @@ export async function handleMessage(msg, sender) {
           },
         };
       }
+      const snipId = usage.snip_id ?? null;
       await withTokenRetry((token) =>
-        insertHighlightAtPosition(documentId, token, selectionData, insertIndex)
+        insertHighlightAtPosition(documentId, token, { ...selectionData, snipId }, insertIndex, { getSnipsMetadata })
       );
       return { sendResponse: true, response: { success: true } };
     } catch (err) {
@@ -212,7 +214,7 @@ export async function handleMessage(msg, sender) {
 
   // --- Reinsert image from Snip History at section ---
   if (type === 'REINSERT_IMAGE_AT_SECTION') {
-    const { driveUrl, insertIndex, pageUrl = '', pageTitle = '' } = msg;
+    const { driveUrl, insertIndex, pageUrl = '', pageTitle = '', snipId = null } = msg;
     if (!driveUrl || typeof insertIndex !== 'number') {
       return {
         sendResponse: true,
@@ -230,10 +232,10 @@ export async function handleMessage(msg, sender) {
         imageHeightPt: 150,
         pageUrl,
         pageTitle,
-        timestamp: new Date().toISOString(),
+        snipId: snipId ?? null,
       };
       await withTokenRetry((token) =>
-        insertImageWithSourceAtPosition(documentId, token, imageData, insertIndex)
+        insertImageWithSourceAtPosition(documentId, token, imageData, insertIndex, { getSnipsMetadata })
       );
       return { sendResponse: true, response: { success: true } };
     } catch (err) {
@@ -254,6 +256,29 @@ export async function handleMessage(msg, sender) {
       return {
         sendResponse: true,
         response: { error: err instanceof Error ? err.message : String(err), allowed: true },
+      };
+    }
+  }
+
+  // --- Format References (Pro): replace SNIP_REF_ inline sources with superscript refs + Sources list ---
+  if (type === 'FORMAT_REFERENCES') {
+    try {
+      const documentId = await getSelectedDocumentId();
+      if (!documentId) {
+        return { sendResponse: true, response: { success: false, error: 'No document selected' } };
+      }
+      const result = await withTokenRetry((token) =>
+        formatReferences(documentId, token, getSnipsMetadata)
+      );
+      return { sendResponse: true, response: result };
+    } catch (err) {
+      log.bg.warn('FORMAT_REFERENCES failed', err);
+      return {
+        sendResponse: true,
+        response: {
+          success: false,
+          error: err instanceof Error ? err.message : String(err),
+        },
       };
     }
   }

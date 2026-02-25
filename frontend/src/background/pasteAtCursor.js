@@ -4,14 +4,14 @@
  */
 
 /**
- * Build the same plain text we would insert via API (quote + source line).
- * @param {{ selectedText: string, pageTitle?: string, timestamp: string }} data
+ * Build the same plain text we would insert via API: quote + "Source: {title}" (no marker in body).
+ * @param {{ selectedText: string, pageTitle?: string }} data
  * @returns {string}
  */
 export function buildPlugPlainText(data) {
-  const { selectedText = '', pageTitle = 'Untitled', timestamp } = data;
+  const { selectedText = '', pageTitle = 'Untitled' } = data;
   const title = pageTitle || 'Untitled';
-  return '\n' + selectedText.trim() + '\nSource: ' + title + ' ' + (timestamp || new Date().toISOString());
+  return '\n' + selectedText.trim() + '\nSource: ' + title;
 }
 
 /**
@@ -64,7 +64,7 @@ export async function tryPasteAtCursorInDocTab(documentId, sourceTabId, plainTex
  * @param {string} documentId
  * @param {number} sourceTabId
  * @param {string} imageDataUrl - data URL of the image (e.g. from crop)
- * @param {string} [sourceText] - e.g. "\nSource: title timestamp"
+ * @param {string} [sourceText] - e.g. "\nSource: title"
  * @returns {Promise<boolean>}
  */
 export async function tryPasteImageAtCursorInDocTab(documentId, sourceTabId, imageDataUrl, sourceText) {

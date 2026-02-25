@@ -317,6 +317,22 @@
   outline-offset: 2px;
 }
 
+.connected-doc__btn--format-ref {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.connected-doc__btn--format-ref:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.connected-doc__btn--format-ref:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
+}
+
 .connected-doc__hint {
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.5);
@@ -553,6 +569,21 @@
   }
 
   .connected-doc__btn--plug:focus-visible {
+    outline: 2px solid #1a73e8;
+    outline-offset: 2px;
+  }
+
+  .connected-doc__btn--format-ref {
+    color: rgba(0, 0, 0, 0.8);
+    border-color: rgba(0, 0, 0, 0.22);
+  }
+
+  .connected-doc__btn--format-ref:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.35);
+  }
+
+  .connected-doc__btn--format-ref:focus-visible {
     outline: 2px solid #1a73e8;
     outline-offset: 2px;
   }

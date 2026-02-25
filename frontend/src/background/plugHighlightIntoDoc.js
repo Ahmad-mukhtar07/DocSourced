@@ -8,7 +8,7 @@ import { withTokenRetry } from './auth.js';
 import { insertHighlightToDoc } from './googleDocs.js';
 import { showNotification } from './notifications.js';
 import { buildPlugPlainText, tryPasteAtCursorInDocTab } from './pasteAtCursor.js';
-import { recordSnipAndCheckLimit } from './snipUsage.js';
+import { recordSnipAndCheckLimit, getSnipsMetadata } from './snipUsage.js';
 
 function friendlyError(err) {
   const msg = err instanceof Error ? err.message : String(err);
@@ -62,6 +62,7 @@ export async function plugHighlightIntoDoc(data, sourceTabId) {
     return;
   }
 
+  const snipId = usage.snip_id ?? null;
   const plainText = buildPlugPlainText(data);
   if (sourceTabId) {
     const pasted = await tryPasteAtCursorInDocTab(documentId, sourceTabId, plainText);
@@ -72,7 +73,7 @@ export async function plugHighlightIntoDoc(data, sourceTabId) {
   }
 
   try {
-    await withTokenRetry((token) => insertHighlightToDoc(documentId, token, data));
+    await withTokenRetry((token) => insertHighlightToDoc(documentId, token, { ...data, snipId }, { getSnipsMetadata }));
     showNotification('Plugged in', 'Highlight was added to your connected Google Doc.');
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
