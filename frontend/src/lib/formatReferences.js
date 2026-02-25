@@ -306,6 +306,35 @@ export async function formatReferences(documentId, accessToken, fetchSnipsMetada
     throw new Error(message);
   }
 
+  // Ensure the Sources block is normal text (not superscript). Inserting at endOfSegmentLocation
+  // can inherit the previous paragraph's superscript; reset baseline for the Sources range.
+  const endUrl = `${DOCS_API_BASE}/${documentId}?fields=body.content(endIndex)`;
+  const endRes = await fetch(endUrl, { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` } });
+  if (endRes.ok) {
+    const endData = await endRes.json();
+    const content = endData.body?.content || [];
+    const newEndIndex = content.length === 0 ? 0 : Math.max(...content.map((c) => c.endIndex || 0));
+    const sourcesStart = Math.max(1, newEndIndex - sourcesText.length);
+    if (sourcesStart < newEndIndex) {
+      await fetch(batchUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requests: [{
+            updateTextStyle: {
+              range: { startIndex: sourcesStart, endIndex: newEndIndex },
+              textStyle: { baselineOffset: 'NONE' },
+              fields: 'baselineOffset',
+            },
+          }],
+        }),
+      });
+    }
+  }
+
   return {
     success: true,
     message: `Formatted ${rangeList.length} reference(s) into ${uniqueSources.length} source(s).`,
