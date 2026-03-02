@@ -1,6 +1,8 @@
 /**
  * "Plug it in": insert selected text (and source/timestamp) into the connected Google Doc.
  * When the doc is open in a tab, tries to paste at cursor first; otherwise appends via API.
+ * Note: The monthly snip limit applies only to "Snip and Plug" (screenshots). This flow
+ * records the text in snips_history for Format References but does not count toward the limit.
  */
 
 import { getSelectedDocumentId } from '../lib/storage.js';

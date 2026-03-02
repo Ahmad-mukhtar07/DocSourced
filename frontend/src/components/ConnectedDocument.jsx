@@ -637,7 +637,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
             <p className="connected-doc__plug-error" role="alert">
               {userId == null
                 ? 'Sign in to use Snip and Plug.'
-                : `Monthly limit reached (${snipUsage.used}/${snipUsage.limit}). Upgrade to add more.`}
+                : `Monthly Snip limit reached (${snipUsage.used}/${snipUsage.limit}). Upgrade to add more.`}
             </p>
           )}
           {snipUsageError && (
