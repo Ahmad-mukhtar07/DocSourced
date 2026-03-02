@@ -9,7 +9,7 @@ import { LoginPage } from './components/LoginPage';
 import { UpgradeModal } from './components/UpgradeModal';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured, supabaseUrl, supabaseAnonKey } from './config/supabase-config.js';
-import { addConnectedDoc } from './lib/connectedDocsService.js';
+import { addConnectedDoc, getConnectedDocs, removeConnectedDoc } from './lib/connectedDocsService.js';
 import './App.css';
 
 if (isSupabaseConfigured && supabaseUrl && typeof chrome?.storage?.local?.set === 'function') {
@@ -95,10 +95,23 @@ function App() {
         await addConnectedDoc(doc.id, doc.name || 'Untitled');
       } catch (e) {
         if (e?.code === 'DOC_LIMIT_REACHED') {
-          setUpgradeModal({ open: true, reason: 'doc_limit' });
-          return;
+          try {
+            const connected = await getConnectedDocs();
+            // Free tier: allow "replace" — remove existing doc and add the one they just picked.
+            if (connected.length === 1) {
+              await removeConnectedDoc(connected[0].id);
+              await addConnectedDoc(doc.id, doc.name || 'Untitled');
+              // Fall through to setSelectedDoc below
+            } else if (connected.length > 1) {
+              setUpgradeModal({ open: true, reason: 'doc_limit' });
+              return;
+            }
+            // connected.length === 0: backend said limit but we see none — still set selection
+          } catch (_) {
+            // Replace failed or getConnectedDocs failed; still try to set selection so user can use the doc
+          }
         }
-        // other errors: still try to set selection locally
+        // Other errors: still try to set selection
       }
     }
     const res = await setSelectedDoc(doc.id, doc.name || 'Untitled');

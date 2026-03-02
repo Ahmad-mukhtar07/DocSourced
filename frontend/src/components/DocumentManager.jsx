@@ -81,6 +81,20 @@ export function DocumentManager({
       }
     } catch (e) {
       if (e?.code === 'DOC_LIMIT_REACHED') {
+        // Free tier: allow replacing the single connected doc with the one they picked
+        try {
+          const connected = await getConnectedDocs();
+          if (connected.length === 1) {
+            await removeConnectedDoc(connected[0].id);
+            await addConnectedDoc(doc.id, doc.name);
+            const res = await setSelectedDoc(doc.id, doc.name);
+            if (res?.success) {
+              onSelectDocument?.(doc);
+              onClose?.();
+              return;
+            }
+          }
+        } catch (_) {}
         setShowUpgradeModal(true);
         return;
       }
