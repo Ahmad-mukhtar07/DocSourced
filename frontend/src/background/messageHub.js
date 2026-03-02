@@ -274,6 +274,20 @@ export async function handleMessage(msg, sender) {
     }
   }
 
+  // --- Snip usage (for popup: used/limit/allowed) ---
+  if (type === 'GET_SNIP_USAGE') {
+    try {
+      const usage = await getSnipUsage();
+      return { sendResponse: true, response: usage };
+    } catch (err) {
+      log.bg.warn('GET_SNIP_USAGE failed', err);
+      return {
+        sendResponse: true,
+        response: { error: err instanceof Error ? err.message : String(err), allowed: true },
+      };
+    }
+  }
+
   // --- Undo Last Insert ---
   if (type === 'GET_UNDO_STATE') {
     const documentId = await getSelectedDocumentId();

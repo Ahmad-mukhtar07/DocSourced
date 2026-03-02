@@ -31,6 +31,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
   // Block Snip and Plug only after we've queried usage and user is over limit (allow by default until then)
   const [snipUsage, setSnipUsage] = useState({ used: 0, limit: 25, allowed: true });
   const [snipUsageLoaded, setSnipUsageLoaded] = useState(false);
+  const [snipUsageError, setSnipUsageError] = useState(null);
   const [docDropdownOpen, setDocDropdownOpen] = useState(false);
   const [connectedDocs, setConnectedDocs] = useState([]);
   const [collapsed, setCollapsed] = useState(false);
@@ -62,13 +63,30 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
   const fetchSnipUsage = async () => {
     try {
       const u = await getSnipUsage();
+      if (u && typeof u.error === 'string') {
+        const isChannelOrTimeout = /channel closed|timed out|message failed/i.test(u.error);
+        setSnipUsage((prev) => ({
+          ...prev,
+          allowed: isChannelOrTimeout ? prev.allowed : false,
+        }));
+        setSnipUsageError(isChannelOrTimeout ? 'Connection lost. Reopen the extension to try again.' : null);
+        setSnipUsageLoaded(true);
+        return;
+      }
       setSnipUsage({
         used: typeof u?.used === 'number' ? u.used : 0,
         limit: typeof u?.limit === 'number' ? u.limit : 25,
-        allowed: u?.allowed === true,
+        allowed: u?.allowed === true || (u?.allowed !== false && (typeof u?.limit === 'number' && u.limit > 0 ? (typeof u?.used === 'number' && u.used < u.limit) : true)),
       });
-    } catch (_) {
-      setSnipUsage((prev) => ({ ...prev, allowed: false }));
+      setSnipUsageError(null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const isChannelOrTimeout = /channel closed|timed out|message failed/i.test(msg);
+      setSnipUsage((prev) => ({
+        ...prev,
+        allowed: isChannelOrTimeout ? prev.allowed : false,
+      }));
+      setSnipUsageError(isChannelOrTimeout ? 'Connection lost. Reopen the extension to try again.' : null);
     } finally {
       setSnipUsageLoaded(true);
     }
@@ -515,16 +533,31 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
       {!collapsed && (
         <>
       <p className="connected-doc__name">{documentName || 'Untitled'}</p>
-      {plugStep === null && (
-        <button
-          type="button"
-          className="connected-doc__btn connected-doc__btn--plug"
-          onClick={handlePlugItIn}
-          disabled={disabled || snipStep !== null}
-        >
-          Plug it in
-        </button>
-      )}
+
+      {/* Primary actions: add content to doc */}
+      <div className="connected-doc__actions connected-doc__actions--primary">
+        {plugStep === null && (
+          <button
+            type="button"
+            className="connected-doc__btn connected-doc__btn--plug"
+            onClick={handlePlugItIn}
+            disabled={disabled || snipStep !== null}
+          >
+            Plug it in
+          </button>
+        )}
+        {snipStep === null && (
+          <button
+            type="button"
+            className={snipClass}
+            onClick={handleSnip}
+            disabled={disabled || plugStep !== null || !snipUsage.allowed}
+            title={!snipUsage.allowed ? (userId == null ? 'Sign in to use Snip and Plug' : `Monthly limit reached (${snipUsage.used}/${snipUsage.limit})`) : plugStep !== null ? 'Wait for Plug it in to finish' : undefined}
+          >
+            Snip and Plug
+          </button>
+        )}
+      </div>
       {plugError && plugStep === null && (
         <p className="connected-doc__plug-error" role="alert">{plugError}</p>
       )}
@@ -568,21 +601,15 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
       )}
       {snipStep === null && (
         <>
-          <button
-            type="button"
-            className={snipClass}
-            onClick={handleSnip}
-            disabled={disabled || plugStep !== null || !snipUsage.allowed}
-            title={!snipUsage.allowed ? (userId == null ? 'Sign in to use Snip and Plug' : `Monthly limit reached (${snipUsage.used}/${snipUsage.limit})`) : plugStep !== null ? 'Wait for Plug it in to finish' : undefined}
-          >
-            Snip and Plug
-          </button>
           {snipUsageLoaded && !snipUsage.allowed && (
             <p className="connected-doc__plug-error" role="alert">
               {userId == null
                 ? 'Sign in to use Snip and Plug.'
                 : `Monthly limit reached (${snipUsage.used}/${snipUsage.limit}). Upgrade to add more.`}
             </p>
+          )}
+          {snipUsageError && (
+            <p className="connected-doc__plug-error" role="alert">{snipUsageError}</p>
           )}
         </>
       )}
@@ -627,15 +654,30 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
           </button>
         </div>
       )}
-      <button
-        type="button"
-        className="connected-doc__btn connected-doc__btn--secondary"
-        onClick={handleUndoLastInsert}
-        disabled={disabled || !undoAvailable || undoLoading || !documentId}
-        title={!documentId ? 'Select a document first' : !undoAvailable ? 'No extension insert to undo' : 'Remove the last Plug or Snip insert'}
-      >
-        {undoLoading ? 'Undoing…' : 'Undo Last Insert'}
-      </button>
+
+      {/* Secondary actions: document tools */}
+      <div className="connected-doc__actions connected-doc__actions--secondary">
+        <button
+          type="button"
+          className="connected-doc__btn connected-doc__btn--tool"
+          onClick={handleUndoLastInsert}
+          disabled={disabled || !undoAvailable || undoLoading || !documentId}
+          title={!documentId ? 'Select a document first' : !undoAvailable ? 'No extension insert to undo' : 'Remove the last Plug or Snip insert'}
+        >
+          {undoLoading ? 'Undoing…' : 'Undo Last Insert'}
+        </button>
+        {canAccessSnipHistory && (
+          <button
+            type="button"
+            className="connected-doc__btn connected-doc__btn--tool"
+            onClick={handleFormatReferences}
+            disabled={disabled || formatRefLoading || !documentId}
+            title={!documentId ? 'Select a document first' : 'Replace inline sources with superscript numbers and add a Sources list at the bottom'}
+          >
+            {formatRefLoading ? 'Formatting…' : 'Format References'}
+          </button>
+        )}
+      </div>
       {undoError && (
         <p className="connected-doc__plug-error" role="alert">{undoError}</p>
       )}
@@ -644,15 +686,6 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
       )}
       {canAccessSnipHistory && (
         <>
-          <button
-            type="button"
-            className="connected-doc__btn connected-doc__btn--format-ref"
-            onClick={handleFormatReferences}
-            disabled={disabled || formatRefLoading || !documentId}
-            title={!documentId ? 'Select a document first' : 'Replace inline sources with superscript numbers and add a Sources list at the bottom'}
-          >
-            {formatRefLoading ? 'Formatting…' : 'Format References'}
-          </button>
           {formatRefError && (
             <p className="connected-doc__plug-error" role="alert">{formatRefError}</p>
           )}

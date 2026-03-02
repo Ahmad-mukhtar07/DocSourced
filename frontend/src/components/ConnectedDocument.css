@@ -225,6 +225,62 @@
   transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.1s ease;
 }
 
+/* Action rows: primary (Plug + Snip stacked full width) and secondary (Undo + Format side by side) */
+.connected-doc__actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.connected-doc__actions--primary {
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+}
+
+.connected-doc__actions--primary .connected-doc__btn {
+  flex: none;
+  width: 100%;
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.connected-doc__actions--secondary {
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.connected-doc__actions--secondary .connected-doc__btn {
+  flex: 1;
+  min-width: 8rem;
+  margin-bottom: 0;
+}
+
+/* Tool buttons: compact, text-style for Undo / Format References */
+.connected-doc__btn--tool {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.connected-doc__btn--tool:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.connected-doc__btn--tool:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.connected-doc__btn--tool:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
 /* Unclicked: bright blue */
 .connected-doc__btn--snip {
   background: #1a73e8;
@@ -708,5 +764,21 @@
 
   .connected-doc__section-cancel:hover {
     background: rgba(0, 0, 0, 0.05);
+  }
+
+  .connected-doc__btn--tool {
+    color: rgba(0, 0, 0, 0.6);
+    border-color: rgba(0, 0, 0, 0.18);
+  }
+
+  .connected-doc__btn--tool:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.85);
+    border-color: rgba(0, 0, 0, 0.28);
+  }
+
+  .connected-doc__btn--tool:focus-visible {
+    outline: 2px solid #1a73e8;
+    outline-offset: 2px;
   }
 }

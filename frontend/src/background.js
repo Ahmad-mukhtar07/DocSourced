@@ -68,13 +68,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     'UNDO_LAST_INSERT',
   ];
   if (hubTypes.includes(msg?.type)) {
+    let responded = false;
+    const safeSendResponse = (response) => {
+      if (responded) return;
+      responded = true;
+      try {
+        sendResponse(response);
+      } catch (_) {}
+    };
+    const timeoutId = setTimeout(() => {
+      safeSendResponse({ error: 'Request timed out. Please reopen the extension and try again.' });
+    }, 25000);
     handleMessage(msg, sender)
       .then((r) => {
-        if (r && r.sendResponse) sendResponse(r.response);
+        clearTimeout(timeoutId);
+        if (r && r.sendResponse) safeSendResponse(r.response);
+        else if (!responded) safeSendResponse({ error: 'No response' });
       })
       .catch((e) => {
+        clearTimeout(timeoutId);
         log.bg.error('messageHub', e);
-        sendResponse({ error: e instanceof Error ? e.message : String(e) });
+        safeSendResponse({ error: e instanceof Error ? e.message : String(e) });
       });
     return true;
   }
