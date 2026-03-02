@@ -60,7 +60,7 @@ function userFriendlyInsertError(message) {
 export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo = {}) {
   const documentId = await getSelectedDocumentId();
   if (!documentId) {
-    await notifyAndRemoveOverlay(tabId, 'No document selected', 'Open EZ-NoteTaker and select a Google Doc to connect.', true);
+    await notifyAndRemoveOverlay(tabId, 'No document selected', 'Open DocSourced and select a Google Doc to connect.', true);
     return;
   }
 
@@ -217,7 +217,7 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
     const msg = err instanceof Error ? err.message : String(err);
     if (msg === 'SNIP_LIMIT_REACHED' || msg === 'NOT_AUTHENTICATED') return; // already notified above
     if (msg.includes('Sign in required')) {
-      await notifyAndRemoveOverlay(tabId, 'Sign in required', 'Open EZ-NoteTaker and click "Connect Google Docs" to sign in.', true);
+      await notifyAndRemoveOverlay(tabId, 'Sign in required', 'Open DocSourced and click "Connect Google Docs" to sign in.', true);
       return;
     }
     await notifyAndRemoveOverlay(tabId, 'Snip and Plug failed', userFriendlyInsertError(msg), true);

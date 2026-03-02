@@ -1,5 +1,5 @@
 /**
- * chrome.storage helpers for EZ-NoteTaker extension state.
+ * chrome.storage helpers for DocSourced extension state.
  * Stores selected Google Doc id and name for later use.
  */
 

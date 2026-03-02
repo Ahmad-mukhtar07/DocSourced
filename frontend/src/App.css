@@ -40,12 +40,40 @@
   flex: 1;
 }
 
+.app__logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.app__title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
 .app__title {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.95);
-  flex: 0 1 auto;
+  flex: 0 0 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app__tagline {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.2;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;

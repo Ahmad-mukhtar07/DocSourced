@@ -6,7 +6,7 @@
 (function () {
   'use strict';
 
-  var LOG_PREFIX = '[EZ-Note Content]';
+  var LOG_PREFIX = '[DocSourced Content]';
   var OVERLAY_ID = 'eznote-snip-overlay';
 
   // If overlay already exists (e.g. user clicked "Snip and Plug" again), remove it and exit.

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { signInWithGoogle } from '../lib/supabaseGoogleAuth.js';
+import docSourcedLogo from '../assets/DocSourced-logo.png';
 import './LoginPage.css';
 
 /**
@@ -26,8 +27,9 @@ export function LoginPage() {
   return (
     <div className="login-page">
       <header className="login-page__header">
-        <h1 className="login-page__title">EZ-NoteTaker</h1>
-        <p className="login-page__subtitle">Sign in to continue</p>
+        <img src={docSourcedLogo} alt="" className="login-page__logo" aria-hidden />
+        <h1 className="login-page__title">DocSourced</h1>
+        <p className="login-page__subtitle">Capture fast. Format clean. Reference intelligently.</p>
       </header>
       <main className="login-page__body">
         <button

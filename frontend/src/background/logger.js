@@ -6,7 +6,7 @@
 const noop = () => {};
 
 function createNamespace(prefix) {
-  const p = `[EZ-Note ${prefix}]`;
+  const p = `[DocSourced ${prefix}]`;
   return {
     debug: typeof console !== 'undefined' && console.debug ? (...args) => console.debug(p, ...args) : noop,
     info: typeof console !== 'undefined' && console.info ? (...args) => console.info(p, ...args) : noop,

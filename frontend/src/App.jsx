@@ -10,6 +10,7 @@ import { UpgradeModal } from './components/UpgradeModal';
 import { useAuth } from './hooks/useAuth';
 import { isSupabaseConfigured, supabaseUrl, supabaseAnonKey } from './config/supabase-config.js';
 import { addConnectedDoc, getConnectedDocs, removeConnectedDoc } from './lib/connectedDocsService.js';
+import docSourcedLogo from './assets/DocSourced-logo.png';
 import './App.css';
 
 if (isSupabaseConfigured && supabaseUrl && typeof chrome?.storage?.local?.set === 'function') {
@@ -165,7 +166,8 @@ function App() {
     return (
       <div className="app app--popup">
         <header className="app__header">
-          <h1 className="app__title">EZ-NoteTaker</h1>
+          <img src={docSourcedLogo} alt="" className="app__logo" aria-hidden />
+          <h1 className="app__title">DocSourced</h1>
         </header>
         <div className="app__body">Loading…</div>
       </div>
@@ -190,7 +192,11 @@ function App() {
       />
       <header className="app__header">
         <div className="app__header-left">
-          <h1 className="app__title">EZ-NoteTaker</h1>
+          <img src={docSourcedLogo} alt="" className="app__logo" aria-hidden />
+          <div className="app__title-wrap">
+            <h1 className="app__title">DocSourced</h1>
+            <p className="app__tagline">Capture fast. Format clean. Reference intelligently.</p>
+          </div>
           <span className="app__status" role="status" aria-live="polite">
             <span className={`app__status-dot app__status-dot--${status === STATUS.NOT_CONNECTED ? 'off' : 'on'}`} />
             {statusLabel}

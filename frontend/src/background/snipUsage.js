@@ -65,7 +65,7 @@ export async function recordSnipAndCheckLimit(params = {}) {
   if (!res.ok) {
     const msg = data?.message || data?.error_description || data?.error || 'record_snip_failed';
     if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
-      console.warn('[EZ-Note] record_snip_and_check_limit failed', res.status, msg, data);
+      console.warn('[DocSourced] record_snip_and_check_limit failed', res.status, msg, data);
     }
     return { error: msg };
   }
@@ -121,7 +121,7 @@ export async function recordImageSnipAndCheckLimit(params = {}) {
   if (!res.ok) {
     const msg = data?.message || data?.error_description || data?.error || 'record_snip_failed';
     if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
-      console.warn('[EZ-Note] record_image_snip_and_check_limit failed', res.status, msg, data);
+      console.warn('[DocSourced] record_image_snip_and_check_limit failed', res.status, msg, data);
     }
     return { error: msg };
   }

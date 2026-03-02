@@ -76,7 +76,7 @@ async function createSnipNamedRange(documentId, accessToken, startIndex, endInde
   });
   if (!res.ok) {
     if (typeof console !== 'undefined' && console.warn) {
-      console.warn('[EZ-Note] createNamedRange failed', res.status, await res.text().catch(() => ''));
+      console.warn('[DocSourced] createNamedRange failed', res.status, await res.text().catch(() => ''));
     }
   }
 }

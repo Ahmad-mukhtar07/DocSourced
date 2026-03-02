@@ -3,7 +3,7 @@
  */
 
 const noop = () => {};
-const prefix = '[EZ-Note Popup]';
+const prefix = '[DocSourced Popup]';
 
 export const log = {
   popup: {

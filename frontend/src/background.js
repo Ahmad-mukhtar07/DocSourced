@@ -1,5 +1,5 @@
 /**
- * EZ-Note background service worker.
+ * DocSourced background service worker.
  * Single message router: messageHub for auth/docs/preview; inline handlers for snip/context menu.
  */
 

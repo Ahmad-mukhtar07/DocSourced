@@ -32,7 +32,7 @@ function friendlyError(err) {
 export async function plugHighlightIntoDoc(data, sourceTabId) {
   const documentId = await getSelectedDocumentId();
   if (!documentId) {
-    showNotification('No document selected', 'Open the EZ-NoteTaker extension and select a Google Doc to connect.');
+    showNotification('No document selected', 'Open the DocSourced extension and select a Google Doc to connect.');
     return;
   }
 
@@ -56,7 +56,7 @@ export async function plugHighlightIntoDoc(data, sourceTabId) {
     return;
   }
   if (usage.error === 'not_authenticated') {
-    showNotification('Sign in required', 'Open the extension and sign in to your account to use Snip and Plug.');
+    showNotification('Sign in required', 'Open DocSourced and sign in to your account to use Snip and Plug.');
     return;
   }
   if (usage.error) {
@@ -80,7 +80,7 @@ export async function plugHighlightIntoDoc(data, sourceTabId) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('Sign in required')) {
-      showNotification('Sign in required', 'Open the EZ-NoteTaker extension and click "Connect Google Docs" to sign in.');
+      showNotification('Sign in required', 'Open the DocSourced extension and click "Connect Google Docs" to sign in.');
       return;
     }
     showNotification('Could not plug in', friendlyError(err));
