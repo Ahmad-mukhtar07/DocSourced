@@ -7,7 +7,7 @@
 
 /** Product name and tagline (extension branding) */
 export const productName = 'DocSourced';
-export const productTagline = 'Capture fast. Format clean. Reference intelligently.';
+export const productTagline = 'Snip from the web, plug into Google Docs—every insert with a linked source.';
 
 export const hero = {
   headline: productName,
@@ -70,14 +70,14 @@ export const features = {
     {
       id: '3',
       tier: 'free',
-      title: 'Sources panel per document',
-      description: 'View “Sources Used in This Document” organized by domain. Snip history is grouped per doc so you can see what you’ve captured and where it came from.',
+      title: 'Undo last insert',
+      description: 'Remove the most recent plug (including its source line) from your doc with one click. You stay in control of every change.',
     },
     {
       id: '4',
-      tier: 'free',
-      title: 'Undo last insert',
-      description: 'Remove the most recent plug (including its source line) from your doc with one click. You stay in control of every change.',
+      tier: 'pro',
+      title: 'Sources panel per document',
+      description: 'View “Sources Used in This Document” organized by domain. Snip history is grouped per doc so you can see what you’ve captured and where it came from.',
     },
     {
       id: '5',

@@ -23,12 +23,19 @@
 .navbar__brand {
   display: flex;
   align-items: center;
+  gap: var(--space-2);
   text-decoration: none;
   color: inherit;
 }
 
 .navbar__brand:hover {
   text-decoration: none;
+}
+
+.navbar__brand-name {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
 }
 
 .navbar__logo {

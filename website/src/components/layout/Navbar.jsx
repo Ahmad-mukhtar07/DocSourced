@@ -2,16 +2,15 @@ import { useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useScrollSpy } from '../../hooks/useScrollSpy';
 import { useAuth } from '../../contexts/AuthContext';
+import { productName } from '../../content/placeholders';
 import './Navbar.css';
 
 const SECTION_LINKS = [
-  { id: 'hero', label: 'Hero' },
   { id: 'how-it-works', label: 'How It Works' },
   { id: 'features', label: 'Features' },
   { id: 'demo', label: 'Demo' },
   { id: 'pricing', label: 'Pricing' },
   { id: 'faq', label: 'FAQ' },
-  { id: 'footer', label: 'Footer' },
 ];
 
 /** Display name: user metadata full_name, or email local part, or email */
@@ -46,11 +45,20 @@ export function Navbar() {
     logout();
   };
 
+  const handleBrandClick = (e) => {
+    closeMenu();
+    if (location.pathname === '/') {
+      e.preventDefault();
+      document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <header className="navbar" role="banner">
       <div className="navbar__container">
-        <Link to="/" className="navbar__brand" aria-label="DocSourced home">
-          <img src="/DocSourced-logo.png" alt="DocSourced" className="navbar__logo" width={140} height={32} />
+        <Link to="/#hero" className="navbar__brand" aria-label={`${productName} home`} onClick={handleBrandClick}>
+          <img src="/DocSourced-logo.png" alt="" className="navbar__logo" width={140} height={32} aria-hidden />
+          <span className="navbar__brand-name">{productName}</span>
         </Link>
 
         <button
