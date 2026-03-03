@@ -1,6 +1,7 @@
 import { Container } from './ui/Container';
 import { Section } from './ui/Section';
 import { Button } from './ui/Button';
+import { productTagline } from '../content/placeholders';
 import { handleGetChromeExtension, handleUpgradeToProWithUser } from '../lib/ctaHandlers';
 import { useAuth } from '../contexts/AuthContext';
 import { supabaseClient } from '../config/supabase-config';
@@ -16,7 +17,7 @@ export function CTASection() {
         <div className="cta-section__card">
           <h2 className="cta-section__title">Ready to transform your research?</h2>
           <p className="cta-section__support">
-            Start capturing, organizing, and formatting your sources effortlessly.
+            {productTagline}
           </p>
           <div className="cta-section__actions">
             <Button

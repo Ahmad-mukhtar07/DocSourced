@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { productTagline } from '../../content/placeholders';
 import './Footer.css';
 
 const socialLinks = [
@@ -25,7 +26,7 @@ export function Footer() {
               />
             </Link>
             <p className="footer__tagline">
-              Capture, organize, and format your research in Google Docs—with sources that stay linked.
+              {productTagline}
             </p>
           </div>
           <nav className="footer__nav" aria-label="Footer">

@@ -67,7 +67,7 @@ export function Hero() {
               <span className="hero__mockup-dots" aria-hidden>
                 <span /><span /><span />
               </span>
-              <span className="hero__mockup-bar">Product preview</span>
+              <span className="hero__mockup-bar">DocSourced</span>
             </div>
             <div className="hero__mockup-content">
               <img
