@@ -42,6 +42,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   // Subscription state: tier comes from public.profiles.tier (synced by stripe-webhook).
   // We fetch it when user is set so the Navbar can show "Free Plan" / "Pro Plan" and the right CTA.
+  // Route protection (ProRoute/ProGate) also relies on this tier: they delay rendering until
+  // subscriptionLoading is false so tier-based access control stays in sync with Supabase without flicker.
   const [tier, setTier] = useState(null); // 'free' | 'pro' | null
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [subscriptionError, setSubscriptionError] = useState(null);
@@ -51,7 +53,7 @@ export function AuthProvider({ children }) {
     if (!isSupabaseConfigured || !supabaseClient || !user?.id) {
       setTier(null);
       setSubscriptionError(null);
-      return;
+      return Promise.resolve();
     }
     setSubscriptionLoading(true);
     setSubscriptionError(null);
@@ -110,6 +112,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   // When user is set, fetch profile tier so Navbar can show plan and correct CTA.
+  // This gives automatic tier sync on page load: when the app loads and a user is
+  // already logged in (session restored from storage), we fetch the latest profiles.tier
+  // and subscriptions state from Supabase so the UI is correct without a manual refresh.
   useEffect(() => {
     if (!user?.id) {
       setTier(null);

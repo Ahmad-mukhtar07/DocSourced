@@ -94,6 +94,16 @@ export function Navbar() {
               {label}
             </a>
           ))}
+          {/* Pro-only route: show Dashboard link when profiles.tier === 'pro' (synced with Supabase). */}
+          {!subscriptionLoading && tier === 'pro' && (
+            <Link
+              to="/dashboard"
+              className="navbar__link"
+              onClick={handleLinkClick}
+            >
+              Dashboard
+            </Link>
+          )}
           {!loading && isSupabaseConfigured && (
             <div className="navbar__auth">
               {user ? (

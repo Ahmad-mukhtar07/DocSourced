@@ -1,0 +1,63 @@
+/* Confirmation banner after returning from Stripe (success or cancel) */
+.stripe-return-banner {
+  margin-bottom: var(--space-6);
+}
+
+.stripe-return-banner__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.stripe-return-banner--success {
+  background: var(--color-success-bg, rgba(34, 197, 94, 0.1));
+  border-color: var(--color-success-border, rgba(34, 197, 94, 0.3));
+}
+
+.stripe-return-banner--success .stripe-return-banner__text {
+  color: var(--color-success-text, var(--color-text));
+}
+
+.stripe-return-banner--cancel {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border);
+}
+
+.stripe-return-banner__text {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  line-height: var(--leading-snug);
+}
+
+.stripe-return-banner__dismiss {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.stripe-return-banner__dismiss:hover {
+  color: var(--color-text);
+  background: var(--color-neutral-100);
+}
+
+.stripe-return-banner__dismiss:focus-visible {
+  outline: 2px solid var(--color-accent-500);
+  outline-offset: 2px;
+}
