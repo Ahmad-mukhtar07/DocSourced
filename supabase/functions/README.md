@@ -68,3 +68,16 @@ Secure Stripe webhook handler that syncs subscription state to `public.subscript
 **Idempotency:** Upsert by `user_id` (select by user_id, then update or insert) so duplicate events do not create duplicate rows.
 
 **Stripe Dashboard:** Add endpoint URL `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`, select the four events above, and copy the signing secret into `STRIPE_WEBHOOK_SIGNING_SECRET`.
+
+---
+
+## get-user-subscription
+
+Server-side subscription validation: returns the authenticated user's tier and subscription data from the database. The website calls this on page load (and when refetching) instead of querying `profiles` or `subscriptions` directly from the client, so subscription status cannot be tampered with client-side.
+
+- **Auth:** Request must include `Authorization: Bearer <supabase_jwt>`. The function validates the JWT with `getUser()`, then fetches from the DB using the service role so the response is authoritative. Invalid or missing JWT → 401.
+- **Secrets:** `SUPABASE_SERVICE_ROLE_KEY` (or `SERVICE_ROLE_KEY`) so the function can read `profiles` and `subscriptions` for the verified user.
+
+**Response:** `{ tier, full_name, email, status, current_period_end, cancel_at_period_end }` — consistent shape so the frontend can rely on it. `tier` is `'free'` or `'pro'`; subscription fields may be `null` if the user has no row in `subscriptions`.
+
+**Why server-verified:** Client-side checks alone can be bypassed (e.g. devtools). This function ensures tier and status are read from the database after JWT validation, so Pro features and billing UI reflect the true state.

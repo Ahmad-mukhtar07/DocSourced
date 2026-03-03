@@ -1,0 +1,116 @@
+/* Shared styles for email verification and onboarding banners */
+.onboarding-banner {
+  padding: var(--space-3) var(--container-padding);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+}
+
+.onboarding-banner__inner {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.onboarding-banner__inner--wide {
+  flex-wrap: wrap;
+}
+
+.onboarding-banner--email .onboarding-banner__text {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.onboarding-banner--onboarding .onboarding-banner__heading {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--color-text);
+  width: 100%;
+}
+
+.onboarding-banner--onboarding .onboarding-banner__text {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+  width: 100%;
+}
+
+.onboarding-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.onboarding-banner__cta {
+  margin: 0;
+}
+
+.onboarding-banner__link {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.onboarding-banner__link:hover {
+  text-decoration: underline;
+}
+
+.onboarding-banner__dismiss {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.onboarding-banner__dismiss:hover {
+  color: var(--color-text);
+  background: var(--color-neutral-100);
+}
+
+.onboarding-banner__dismiss:focus-visible {
+  outline: 2px solid var(--color-accent-500);
+  outline-offset: 2px;
+}
+
+/* Onboarding: dismiss at top-right of content block */
+.onboarding-banner--onboarding .onboarding-banner__inner {
+  position: relative;
+  padding-right: 2.5rem;
+}
+
+.onboarding-banner--onboarding .onboarding-banner__dismiss {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+@media (min-width: 640px) {
+  .onboarding-banner--onboarding .onboarding-banner__heading {
+    font-size: var(--text-lg);
+  }
+  .onboarding-banner--onboarding .onboarding-banner__text {
+    margin-bottom: var(--space-2);
+  }
+  .onboarding-banner__actions {
+    width: auto;
+  }
+}

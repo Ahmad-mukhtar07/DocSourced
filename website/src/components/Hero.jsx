@@ -1,15 +1,23 @@
 import { Button } from './ui/Button';
 import { Container } from './ui/Container';
 import { hero, heroDemoSlot } from '../content/placeholders';
-import { handleGetChromeExtension, handleUpgradeToProWithUser } from '../lib/ctaHandlers';
+import { handleGetChromeExtension, handleUpgradeToProWithUser, handleManageSubscription } from '../lib/ctaHandlers';
 import { useAuth } from '../contexts/AuthContext';
 import { supabaseClient } from '../config/supabase-config';
 import './Hero.css';
 
 export function Hero() {
-  const { user, loading, signInWithGoogle, isSupabaseConfigured } = useAuth();
+  const { user, loading, tier, subscriptionLoading, refetchSubscription, signInWithGoogle, isSupabaseConfigured } = useAuth();
   const showLoginCta = isSupabaseConfigured && !loading && !user;
   const showUpgradeCta = isSupabaseConfigured && !loading && user;
+
+  const handleSubscriptionCta = () => {
+    if (tier === 'pro') {
+      handleManageSubscription(supabaseClient, refetchSubscription);
+    } else {
+      handleUpgradeToProWithUser(supabaseClient);
+    }
+  };
 
   return (
     <section id="hero" className="hero" aria-labelledby="hero-heading">
@@ -46,17 +54,19 @@ export function Hero() {
                 Log in with Google
               </Button>
             )}
-            {/* Upgrade to Pro: only for logged-in users; Stripe Checkout will be triggered in handleUpgradeToProWithUser */}
+            {/* Upgrade / Manage: only for logged-in users; Pro → Billing Portal, Free → Checkout */}
             {showUpgradeCta && (
               <Button
                 type="button"
                 variant="primary"
                 size="lg"
                 className="hero__cta hero__cta--upgrade"
-                onClick={() => handleUpgradeToProWithUser(supabaseClient)}
-                aria-label="Upgrade to Pro subscription"
+                onClick={handleSubscriptionCta}
+                disabled={subscriptionLoading}
+                aria-busy={subscriptionLoading}
+                aria-label={tier === 'pro' ? 'Manage subscription' : 'Upgrade to Pro subscription'}
               >
-                Upgrade to Pro
+                {subscriptionLoading ? '…' : tier === 'pro' ? 'Manage Subscription' : 'Upgrade to Pro'}
               </Button>
             )}
           </div>

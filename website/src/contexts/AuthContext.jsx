@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabaseClient, isSupabaseConfigured } from '../config/supabase-config.js';
+import { fetchUserSubscription } from '../lib/getSubscription.js';
 
 const AuthContext = createContext(null);
 
@@ -40,15 +41,17 @@ export async function signInWithGoogle() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Subscription state: tier comes from public.profiles.tier (synced by stripe-webhook).
-  // We fetch it when user is set so the Navbar can show "Free Plan" / "Pro Plan" and the right CTA.
-  // Route protection (ProRoute/ProGate) also relies on this tier: they delay rendering until
-  // subscriptionLoading is false so tier-based access control stays in sync with Supabase without flicker.
+  // Subscription state: tier comes from get-user-subscription (server-verified profiles.tier).
+  // Pro access is not restricted when cancel_at_period_end is true: the webhook only sets
+  // tier to 'free' when the subscription is fully canceled (after current_period_end), so
+  // scheduled downgrades are handled safely without prematurely locking out Pro features.
   const [tier, setTier] = useState(null); // 'free' | 'pro' | null
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [subscriptionError, setSubscriptionError] = useState(null);
 
-  // Fetch profile tier from Supabase for the current user. Keeps UI in sync with profiles.tier.
+  // Fetch subscription state from the get-user-subscription Edge Function (server-verified) instead of
+  // querying tables from the client. Prevents client-side tampering and ensures tier/status are
+  // authoritative. Used after returning from Stripe or when the app needs to refresh plan state.
   const refetchSubscription = useCallback(async () => {
     if (!isSupabaseConfigured || !supabaseClient || !user?.id) {
       setTier(null);
@@ -58,18 +61,13 @@ export function AuthProvider({ children }) {
     setSubscriptionLoading(true);
     setSubscriptionError(null);
     try {
-      const { data, error } = await supabaseClient
-        .from('profiles')
-        .select('tier')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (error) {
-        setSubscriptionError(error.message);
+      const result = await fetchUserSubscription(supabaseClient);
+      if (result.error) {
+        setSubscriptionError(result.error);
         setTier(null);
         return;
       }
-      const t = (data?.tier ?? 'free').toLowerCase();
-      setTier(t === 'pro' ? 'pro' : 'free');
+      setTier(result.data?.tier ?? 'free');
     } catch (e) {
       setSubscriptionError(e?.message ?? 'Failed to load plan');
       setTier(null);
@@ -111,12 +109,14 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // When user is set, fetch profile tier so Navbar can show plan and correct CTA.
-  // This gives automatic tier sync on page load: when the app loads and a user is
-  // already logged in (session restored from storage), we fetch the latest profiles.tier
-  // and subscriptions state from Supabase so the UI is correct without a manual refresh.
+  // When user is set, ensure they have a profiles row before we use tier/subscriptions.
+  // Onboarding flow: every authenticated user must have a corresponding profiles record so
+  // subscription and billing features (Navbar tier, ProRoute, dashboard) work. We check for
+  // an existing row first to avoid duplicate key errors; if missing, we insert with default
+  // tier = 'free'. Then we fetch tier. No upsert-overwrite of full_name/email so we don't
+  // clobber server-updated or trigger-created data.
   useEffect(() => {
-    if (!user?.id) {
+    if (!user?.id || !isSupabaseConfigured || !supabaseClient) {
       setTier(null);
       setSubscriptionError(null);
       setSubscriptionLoading(false);
@@ -125,21 +125,48 @@ export function AuthProvider({ children }) {
     let cancelled = false;
     setSubscriptionLoading(true);
     setSubscriptionError(null);
-    supabaseClient
-      .from('profiles')
-      .select('tier')
-      .eq('id', user.id)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error) {
-          setSubscriptionError(error.message);
-          setTier(null);
-          return;
+
+    async function ensureProfileThenFetchTier() {
+      // 1. Ensure profile exists: select first, insert only when missing (no duplicate rows).
+      const { data: existing } = await supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!existing) {
+        const { error: insertError } = await supabaseClient
+          .from('profiles')
+          .insert({
+            id: user.id,
+            full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+            email: user.email ?? null,
+            tier: 'free',
+          });
+        if (!cancelled && insertError) {
+          // Trigger may have created the row between select and insert; if duplicate, continue.
+          if (insertError.code !== '23505') {
+            setSubscriptionError(insertError.message);
+            setTier(null);
+            setSubscriptionLoading(false);
+            return;
+          }
         }
-        const t = (data?.tier ?? 'free').toLowerCase();
-        setTier(t === 'pro' ? 'pro' : 'free');
-      })
+      }
+      if (cancelled) return;
+      // 2. Fetch tier and subscription from get-user-subscription Edge Function (server-verified).
+      // We do not query profiles/subscriptions from the client so subscription status cannot be tampered with.
+      const result = await fetchUserSubscription(supabaseClient);
+      if (cancelled) return;
+      if (result.error) {
+        setSubscriptionError(result.error);
+        setTier(null);
+        return;
+      }
+      setTier(result.data?.tier ?? 'free');
+    }
+
+    ensureProfileThenFetchTier()
       .catch((e) => {
         if (!cancelled) {
           setSubscriptionError(e?.message ?? 'Failed to load plan');
@@ -170,6 +197,8 @@ export function AuthProvider({ children }) {
     logout,
     signInWithGoogle,
     isSupabaseConfigured,
+    // Email verification: set by Supabase when provider (e.g. Google) confirms email. Used for onboarding/verification banner.
+    emailVerified: Boolean(user?.email_confirmed_at),
   };
 
   return (
