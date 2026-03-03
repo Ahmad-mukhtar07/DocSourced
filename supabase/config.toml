@@ -24,5 +24,8 @@ verify_jwt = false
 [functions.get-user-subscription]
 verify_jwt = false
 
+[functions.validate-access]
+verify_jwt = false
+
 [functions.stripe-webhook]
 verify_jwt = false

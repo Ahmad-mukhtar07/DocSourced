@@ -1,6 +1,7 @@
 /**
  * Centralized feature access by tier. Pro bypasses limits; free has restrictions.
- * Use with useFeatureAccess hook (reads tier from auth) or featureGate() for non-React code.
+ * Tier is server-verified (validate-access Edge Function) so client cannot tamper;
+ * use with useFeatureAccess hook (reads tier from AuthContext) or featureGate() for non-React code.
  */
 
 export const FEATURES = {

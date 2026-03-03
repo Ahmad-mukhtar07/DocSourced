@@ -1,8 +1,8 @@
 // Create a Stripe Billing Portal session so the user can manage subscription (cancel, update payment, etc.).
 // Called by the website when a logged-in Pro user clicks "Manage Subscription".
-// Requires the Supabase auth JWT; we resolve the user and load their subscriptions row to get
-// stripe_customer_id (set by stripe-webhook from subscription.customer). We create a portal session
-// with return_url = SITE_URL so after leaving the portal the user returns to the site.
+// We resolve the user from the JWT, then find their Stripe customer by:
+// 1) subscription metadata (user_id set at checkout) — most reliable
+// 2) fallback: Stripe customer list by user email
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@14?target=denonext'
@@ -11,8 +11,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
-
-const SUBSCRIPTIONS_TABLE = 'subscriptions'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -34,11 +32,18 @@ Deno.serve(async (req) => {
     )
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
   const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
   const siteUrl = (Deno.env.get('SITE_URL') ?? '').replace(/\/$/, '')
 
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Missing SUPABASE_URL or SUPABASE_ANON_KEY')
+    return new Response(
+      JSON.stringify({ error: 'Server configuration error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
   if (!stripeSecretKey || !siteUrl) {
     console.error('Missing STRIPE_SECRET_KEY or SITE_URL')
     return new Response(
@@ -60,38 +65,47 @@ Deno.serve(async (req) => {
   }
 
   const userId = user.id
+  const stripe = new Stripe(stripeSecretKey, {})
+  let customerIdForPortal = null
 
-  // Load subscription row for this user; stripe_customer_id is set by stripe-webhook when
-  // checkout completes or subscription is synced (subscription.customer).
-  const { data: sub, error: subError } = await supabase
-    .from(SUBSCRIPTIONS_TABLE)
-    .select('stripe_customer_id')
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (subError) {
-    console.error('subscriptions select error', subError)
-    return new Response(
-      JSON.stringify({ error: 'Failed to load subscription' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+  // 1) Find customer via subscription metadata (user_id is set at checkout in create-checkout-session).
+  try {
+    const subs = await stripe.subscriptions.list({ status: 'all', limit: 100 })
+    const match = subs.data.find((s) => (s.metadata?.user_id ?? '') === userId)
+    const customerId = match?.customer
+    if (typeof customerId === 'string') {
+      customerIdForPortal = customerId
+    } else if (customerId && typeof customerId === 'object' && 'id' in customerId) {
+      customerIdForPortal = (customerId as { id: string }).id
+    }
+  } catch (err) {
+    console.error('Stripe subscriptions.list failed', err)
   }
 
-  const stripeCustomerId = sub?.stripe_customer_id?.trim() || null
-  if (!stripeCustomerId) {
+  // 2) Fallback: look up by user email (customer created at checkout may use this email).
+  if (!customerIdForPortal && user.email?.trim()) {
+    try {
+      const customers = await stripe.customers.list({ email: user.email.trim(), limit: 10 })
+      const withSubscription = customers.data.filter((c) => c.subscriptions?.data?.some((s) => ['active', 'trialing'].includes(s.status)))
+      const customer = withSubscription[0] ?? customers.data[0]
+      if (customer?.id) customerIdForPortal = customer.id
+    } catch (err) {
+      console.error('Stripe customers.list failed', err)
+    }
+  }
+
+  if (!customerIdForPortal) {
     return new Response(
       JSON.stringify({
-        error: 'No billing customer found. If you just upgraded, try again in a moment.',
+        error: 'No billing customer found. If you have an active subscription, the email on your account may not match the one used at checkout. Try again or contact support.',
       }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 
-  const stripe = new Stripe(stripeSecretKey, {})
-
   try {
     const portalSession = await stripe.billingPortal.sessions.create({
-      customer: stripeCustomerId,
+      customer: customerIdForPortal,
       return_url: siteUrl,
     })
 

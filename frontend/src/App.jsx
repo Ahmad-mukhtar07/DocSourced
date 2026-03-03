@@ -27,7 +27,7 @@ const STATUS = {
 };
 
 function App() {
-  const { user: supabaseUser, loading: authLoading, logout: supabaseLogout, tier } = useAuth();
+  const { user: supabaseUser, loading: authLoading, tier, accessValidationLoading, logout: supabaseLogout } = useAuth();
   const [status, setStatus] = useState(STATUS.NOT_CONNECTED);
   const [documentId, setDocumentId] = useState(null);
   const [documentName, setDocumentName] = useState(null);
@@ -39,6 +39,9 @@ function App() {
 
   // Route guard: only show login when auth is resolved and there is no session (no flash).
   const showSupabaseLogin = isSupabaseConfigured && !authLoading && !supabaseUser;
+
+  // Wait for server-verified tier when user is present so we don't flash Pro then downgrade.
+  const waitingForAccess = Boolean(supabaseUser && accessValidationLoading);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -161,8 +164,8 @@ function App() {
     return <LoginPage />;
   }
 
-  // (2) Session check on load: show loading until auth resolved, then dashboard
-  if (authLoading || initializing) {
+  // (2) Session check on load: show loading until auth resolved and (if logged in) access validation done.
+  if (authLoading || initializing || waitingForAccess) {
     return (
       <div className="app app--popup">
         <header className="app__header">

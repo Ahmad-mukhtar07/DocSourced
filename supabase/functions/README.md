@@ -81,3 +81,16 @@ Server-side subscription validation: returns the authenticated user's tier and s
 **Response:** `{ tier, full_name, email, status, current_period_end, cancel_at_period_end }` — consistent shape so the frontend can rely on it. `tier` is `'free'` or `'pro'`; subscription fields may be `null` if the user has no row in `subscriptions`.
 
 **Why server-verified:** Client-side checks alone can be bypassed (e.g. devtools). This function ensures tier and status are read from the database after JWT validation, so Pro features and billing UI reflect the true state.
+
+---
+
+## validate-access
+
+Minimal server-side access check for **Pro features**. Used by the Chrome extension (and optionally the website) to verify whether the authenticated user has Pro access. Returns only `{ pro: boolean }` so clients can revalidate on startup and periodically without heavy payloads.
+
+- **Security:** Same as get-user-subscription: validates JWT with `getUser()`, then reads `profiles.tier` and `subscriptions` with the service role. Tier is never trusted from client state—this endpoint is the source of truth for "are Pro features allowed?" This keeps the **website and extension in sync**: when a user cancels on the website, the next validate-access call in the extension returns `pro: false` and the extension can immediately downgrade UI and disable Pro-only features.
+- **Auth:** Request must include `Authorization: Bearer <supabase_jwt>`.
+- **Secrets:** `SUPABASE_SERVICE_ROLE_KEY` (or `SERVICE_ROLE_KEY`).
+
+**Response:** `{ pro: true }` or `{ pro: false }`. On error (401, 500, missing config), the function returns an error body; the extension should treat any failure as `pro: false` so it never crashes and gracefully falls back to free-tier behavior.
+
