@@ -15,7 +15,7 @@ export const hero = {
   ctaPrimary: 'Get the Chrome Extension',
   ctaSecondary: 'See How It Works',
   mockupAlt: 'DocSourced extension — capture and format research in Google Docs',
-  mockupImageUrl: '../../public/DocSourced-coverpng.png',
+  mockupImageUrl: 'https://i.postimg.cc/j5SSng3J/Doc-Sourced-coverpng.png',
 };
 
 export const heroDemoSlot = {
