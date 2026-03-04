@@ -55,6 +55,7 @@ export function DashboardPage() {
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState(null);
+  const [stripeLoading, setStripeLoading] = useState(false);
 
   // Redirect if not logged in.
   if (!authLoading && !user) {
@@ -225,18 +226,52 @@ export function DashboardPage() {
                 {hasPro ? (
                   <button
                     type="button"
-                    className="dashboard-page__btn navbar__btn navbar__btn--primary"
-                    onClick={() => handleManageSubscription(supabaseClient, refetchSubscription)}
+                    className={`dashboard-page__btn navbar__btn navbar__btn--primary ${stripeLoading ? 'dashboard-page__btn--loading' : ''}`}
+                    onClick={async () => {
+                      setStripeLoading(true);
+                      try {
+                        await handleManageSubscription(supabaseClient, refetchSubscription);
+                      } finally {
+                        setStripeLoading(false);
+                      }
+                    }}
+                    disabled={stripeLoading}
+                    aria-busy={stripeLoading}
+                    aria-disabled={stripeLoading}
                   >
-                    Manage Subscription
+                    {stripeLoading ? (
+                      <>
+                        <span className="dashboard-page__btn-spinner" aria-hidden />
+                        <span>Loading…</span>
+                      </>
+                    ) : (
+                      'Manage Subscription'
+                    )}
                   </button>
                 ) : (
                   <button
                     type="button"
-                    className="dashboard-page__btn navbar__btn navbar__btn--primary"
-                    onClick={() => handleUpgradeToProWithUser(supabaseClient)}
+                    className={`dashboard-page__btn navbar__btn navbar__btn--primary ${stripeLoading ? 'dashboard-page__btn--loading' : ''}`}
+                    onClick={async () => {
+                      setStripeLoading(true);
+                      try {
+                        await handleUpgradeToProWithUser(supabaseClient);
+                      } finally {
+                        setStripeLoading(false);
+                      }
+                    }}
+                    disabled={stripeLoading}
+                    aria-busy={stripeLoading}
+                    aria-disabled={stripeLoading}
                   >
-                    Upgrade to Pro
+                    {stripeLoading ? (
+                      <>
+                        <span className="dashboard-page__btn-spinner" aria-hidden />
+                        <span>Loading…</span>
+                      </>
+                    ) : (
+                      'Upgrade to Pro'
+                    )}
                   </button>
                 )}
               </div>
