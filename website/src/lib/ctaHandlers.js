@@ -15,8 +15,8 @@
  *   store listing URL when published.
  */
 
-// TODO: Replace with your Chrome Web Store listing URL when published
-const GET_CHROME_EXTENSION_URL = 'https://chrome.google.com/webstore';
+// Chrome Web Store listing for DocSourced
+const GET_CHROME_EXTENSION_URL = 'https://chromewebstore.google.com/detail/hjljflbabckeaicedbbkaobjkhkkafjf?utm_source=item-share-cb';
 
 // TODO: Replace with Stripe Checkout session URL (create via API or Stripe Dashboard).
 // For dynamic pricing, create the session server-side and redirect to session.url
