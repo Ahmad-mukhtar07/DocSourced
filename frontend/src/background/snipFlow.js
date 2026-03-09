@@ -16,7 +16,40 @@ const SNIP_OVERLAY_PATH = 'snipOverlay.js';
 const SNIP_INSERT_INDEX_KEY = 'eznote_snip_insert_index';
 const SNIP_INSERT_SUCCESS_KEY = 'eznote_snip_insert_success';
 const SNIP_INSERT_ERROR_KEY = 'eznote_snip_insert_error';
+const OFFSCREEN_DOCUMENT_PATH = 'offscreen.html';
 const sessionStorage = chrome.storage?.session || chrome.storage?.local;
+
+let offscreenDocumentCreating = null;
+
+async function ensureOffscreenDocument() {
+  if (typeof chrome.offscreen === 'undefined') return false;
+  const url = chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH);
+  let exists = false;
+  if (chrome.runtime.getContexts) {
+    const existing = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT'],
+      documentUrls: [url],
+    });
+    exists = existing.length > 0;
+  }
+  if (!exists && typeof self.clients !== 'undefined') {
+    const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    exists = clientList.some((c) => c.url === url);
+  }
+  if (exists) return true;
+  if (offscreenDocumentCreating) return offscreenDocumentCreating;
+  offscreenDocumentCreating = chrome.offscreen.createDocument({
+    url: OFFSCREEN_DOCUMENT_PATH,
+    reasons: ['CLIPBOARD'],
+    justification: 'Copy snip image to clipboard when user chooses Copy to clipboard.',
+  });
+  try {
+    await offscreenDocumentCreating;
+    return true;
+  } finally {
+    offscreenDocumentCreating = null;
+  }
+}
 
 export async function getSnipInsertIndex() {
   if (!sessionStorage) return null;
@@ -58,12 +91,6 @@ function userFriendlyInsertError(message) {
  * Handle SNIP_BOUNDS: remove overlay, capture tab, crop via content script, then withTokenRetry: ensure folder, upload, insert.
  */
 export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo = {}) {
-  const documentId = await getSelectedDocumentId();
-  if (!documentId) {
-    await notifyAndRemoveOverlay(tabId, 'No document selected', 'Open DocSourced and select a Google Doc to connect.', true);
-    return;
-  }
-
   try {
     await chrome.tabs.sendMessage(tabId, { type: 'REMOVE_SNIP_OVERLAY' });
   } catch (_) {}
@@ -96,6 +123,109 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
 
   const pageUrl = pageInfo.pageUrl ?? '';
   const pageTitle = pageInfo.pageTitle ?? 'Untitled';
+  const insertIndex = await getSnipInsertIndex();
+  await clearSnipInsertIndex();
+
+  // Copy-only: user chose "Copy to clipboard" instead of inserting into doc.
+  if (insertIndex === -1) {
+    const pageTitleForNotify = pageTitle;
+    const sourceText = 'Source: ' + pageTitle + (pageUrl ? '\n' + pageUrl : '');
+    try {
+      // Copy from the tab after focusing it so the page has focus (clipboard often requires it).
+      await chrome.tabs.update(tabId, { active: true });
+      await new Promise((r) => setTimeout(r, 400));
+      const tabCopyOk = await new Promise((resolve) => {
+        const timeout = setTimeout(() => resolve(false), 5000);
+        const listener = (msg, sender) => {
+          if (sender.tab?.id !== tabId || msg?.type !== 'SNIP_COPY_TO_CLIPBOARD_RESULT') return;
+          chrome.runtime.onMessage.removeListener(listener);
+          clearTimeout(timeout);
+          resolve(msg.success === true);
+        };
+        chrome.runtime.onMessage.addListener(listener);
+        chrome.scripting.executeScript({
+          target: { tabId },
+          func: (dataUrl, source) => {
+            fetch(dataUrl)
+              .then((r) => r.blob())
+              .then((blob) => {
+                const items = { 'image/png': blob };
+                if (source && typeof source === 'string') {
+                  items['text/plain'] = new Blob([source], { type: 'text/plain' });
+                }
+                return navigator.clipboard.write([new ClipboardItem(items)]);
+              })
+              .then(() => {
+                if (chrome.runtime?.sendMessage) {
+                  chrome.runtime.sendMessage({ type: 'SNIP_COPY_TO_CLIPBOARD_RESULT', success: true });
+                }
+              })
+              .catch((err) => {
+                if (chrome.runtime?.sendMessage) {
+                  chrome.runtime.sendMessage({
+                    type: 'SNIP_COPY_TO_CLIPBOARD_RESULT',
+                    success: false,
+                    error: err instanceof Error ? err.message : String(err),
+                  });
+                }
+              });
+          },
+          args: [cropResult.base64, sourceText],
+        }).catch(() => {
+          chrome.runtime.onMessage.removeListener(listener);
+          clearTimeout(timeout);
+          resolve(false);
+        });
+      });
+      if (!tabCopyOk) {
+        const hasOffscreen = await ensureOffscreenDocument();
+        if (!hasOffscreen) {
+          throw new Error('Clipboard not available. Try on a normal webpage (not chrome:// or an extension page).');
+        }
+        const response = await new Promise((resolve) => {
+          chrome.runtime.sendMessage(
+            {
+              target: 'offscreen',
+              type: 'copy-snip-image',
+              data: { imageDataUrl: cropResult.base64, sourceText },
+            },
+            (res) => {
+              if (chrome.runtime.lastError) {
+                resolve({ success: false, error: chrome.runtime.lastError.message });
+              } else {
+                resolve(res || { success: false });
+              }
+            }
+          );
+        });
+        if (!response?.success) {
+          throw new Error(response?.error || 'Could not copy to clipboard');
+        }
+      }
+      try {
+        chrome.runtime.sendMessage({ type: 'SNIP_COPY_SUCCESS' });
+      } catch (_) {}
+    } catch (err) {
+      await notifyAndRemoveOverlay(tabId, 'Copy failed', err?.message || 'Could not copy to clipboard.', true);
+      return;
+    }
+    try {
+      await chrome.tabs.sendMessage(tabId, { type: 'REMOVE_SNIP_OVERLAY' });
+    } catch (_) {}
+    if (sessionStorage) await sessionStorage.remove(SNIP_INSERT_ERROR_KEY);
+    showNotification(
+      'Snip and Plug',
+      'Image copied to clipboard. Paste anywhere.' + (pageTitleForNotify ? ` Source: ${pageTitleForNotify}` : '')
+    );
+    return;
+  }
+
+  const documentId = await getSelectedDocumentId();
+  if (!documentId) {
+    await notifyAndRemoveOverlay(tabId, 'No document selected', 'Open DocSourced and select a Google Doc to connect.', true);
+    return;
+  }
+
   const domain = (() => {
     try {
       if (!pageUrl) return '';
@@ -107,9 +237,6 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
   })();
   const timestamp = new Date().toISOString();
   let sourceText = '';
-
-  const insertIndex = await getSnipInsertIndex();
-  await clearSnipInsertIndex();
 
   // Try paste-at-cursor first (no Drive upload — no drive link to store).
   // Check limit first so we never paste without recording.

@@ -20,10 +20,12 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
   const [plugSections, setPlugSections] = useState([]);
   const [plugError, setPlugError] = useState(null);
   const [plugSuccess, setPlugSuccess] = useState(false);
+  const [plugSuccessMessage, setPlugSuccessMessage] = useState(null); // 'added' | 'copied'
   const [snipStep, setSnipStep] = useState(null); // null | 'loading_sections' | 'sections' | 'inserting'
   const [snipSections, setSnipSections] = useState([]);
   const [snipError, setSnipError] = useState(null);
   const [snipSuccess, setSnipSuccess] = useState(false);
+  const [snipCopySuccess, setSnipCopySuccess] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeModalReason, setUpgradeModalReason] = useState('snip_limit');
   const [upgradeModalLimit, setUpgradeModalLimit] = useState(25);
@@ -100,6 +102,19 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
     chrome.runtime.sendMessage({ type: 'GET_SNIP_STATE' }, (response) => {
       if (!chrome.runtime.lastError && response?.active) setSnipActive(true);
     });
+  }, []);
+
+  // Listen for snip copy success from background (so we show "Copied to clipboard!" in the panel)
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.onMessage) return;
+    const listener = (msg) => {
+      if (msg?.type === 'SNIP_COPY_SUCCESS') {
+        setSnipCopySuccess(true);
+        setTimeout(() => setSnipCopySuccess(false), 2500);
+      }
+    };
+    chrome.runtime.onMessage.addListener(listener);
+    return () => chrome.runtime.onMessage.removeListener(listener);
   }, []);
 
   // When user is set or changes (e.g. switch account), sync token to storage then fetch usage for that user
@@ -247,7 +262,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
         setSnipStep(null);
         return;
       }
-      setSnipSections(secRes.sections);
+      setSnipSections([...secRes.sections, { label: 'COPY TO CLIPBOARD (No Source)', index: -1 }]);
       setSnipStep('sections');
     } catch (e) {
       setSnipError(e instanceof Error ? e.message : 'Something went wrong');
@@ -274,6 +289,11 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
           if (response?.error) {
             setSnipError(response.error);
             setSnipStep('sections');
+            return;
+          }
+          if (section.index === -1) {
+            setSnipStep(null);
+            setSnipSections([]);
             return;
           }
           setSnipStep('inserting');
@@ -321,7 +341,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
         return;
       }
       setPlugSelection(selRes.selection);
-      setPlugSections(secRes.sections);
+      setPlugSections([...secRes.sections, { label: 'COPY TO CLIPBOARD', index: -1 }]);
       setPlugStep('sections');
     } catch (e) {
       setPlugError(e instanceof Error ? e.message : 'Something went wrong');
@@ -331,18 +351,38 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
 
   const handlePickSection = async (section) => {
     if (!plugSelection) return;
+    if (section.index === -1) {
+      const title = plugSelection.pageTitle || 'Untitled';
+      const text = plugSelection.selectedText?.trim() || '';
+      const sourceLine = 'Source: ' + title + (plugSelection.pageUrl ? '\n' + plugSelection.pageUrl : '');
+      const clipboardText = text + '\n\n' + sourceLine;
+      try {
+        await navigator.clipboard.writeText(clipboardText);
+        setPlugSuccess(true);
+        setPlugSuccessMessage('copied');
+        setPlugStep(null);
+        setPlugSelection(null);
+        setPlugSections([]);
+        setTimeout(() => { setPlugSuccess(false); setPlugSuccessMessage(null); }, 2500);
+      } catch (e) {
+        setPlugError(e instanceof Error ? e.message : 'Could not copy to clipboard');
+        setPlugStep('sections');
+      }
+      return;
+    }
     setPlugStep('inserting');
     setPlugError(null);
     try {
       const res = await plugItInAtSection(plugSelection, section.index);
       if (res?.success) {
         setPlugSuccess(true);
+        setPlugSuccessMessage('added');
         setPlugStep(null);
         setPlugSelection(null);
         setPlugSections([]);
         fetchSnipUsage();
         refreshUndoState();
-        setTimeout(() => setPlugSuccess(false), 2500);
+        setTimeout(() => { setPlugSuccess(false); setPlugSuccessMessage(null); }, 2500);
       } else if (res?.error === 'snip_limit_reached') {
         setPlugStep(null);
         setPlugSelection(null);
@@ -651,10 +691,15 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
         <p className="connected-doc__plug-error" role="alert">{plugError}</p>
       )}
       {plugSuccess && (
-        <p className="connected-doc__plug-success">Added to doc!</p>
+        <p className="connected-doc__plug-success">
+          {plugSuccessMessage === 'copied' ? 'Copied to clipboard!' : 'Added to doc!'}
+        </p>
       )}
       {snipStep === null && (
         <>
+          {snipCopySuccess && (
+            <p className="connected-doc__plug-success">Copied to clipboard!</p>
+          )}
           {snipUsageLoaded && !snipUsage.allowed && (
             <p className="connected-doc__plug-error" role="alert">
               {userId == null
