@@ -1,5 +1,5 @@
 /**
- * Context menu: "Plug it in" — only when text is selected.
+ * Context menu: "Text Snip" — only when text is selected.
  * On click: capture selection, page URL/title, timestamp; send to insertion flow.
  */
 
@@ -10,14 +10,14 @@ import { showNotification } from './notifications.js';
 const MENU_ID = 'eznote-plug-it-in';
 
 /**
- * Create the "Plug it in" context menu (selection context only).
+ * Create the "Text Snip" context menu (selection context only).
  */
 export function createContextMenu() {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create(
       {
         id: MENU_ID,
-        title: 'Plug it in',
+        title: 'Text Snip',
         contexts: ['selection'],
       },
       () => {
@@ -41,7 +41,7 @@ export async function onContextMenuClick(info, tab) {
   try {
     const selection = await getSelectionAndPageInfo(tab);
     if (!selection.selectedText?.trim()) {
-      showNotification('No text selected', 'Select some text on the page, then right‑click and choose "Plug it in".');
+      showNotification('No text selected', 'Select some text on the page, then right‑click and choose "Text Snip".');
       return;
     }
     await plugHighlightIntoDoc(selection, tab.id);
@@ -55,7 +55,7 @@ export async function onContextMenuClick(info, tab) {
 }
 
 /**
- * Plug the current selection from a tab into the connected Doc (same as context menu "Plug it in").
+ * Plug the current selection from a tab into the connected Doc (same as context menu "Text Snip").
  * Call from popup button or elsewhere with the tab id.
  * @param {number} tabId
  */
@@ -65,7 +65,7 @@ export async function plugSelectionFromTab(tabId) {
     const tab = await chrome.tabs.get(tabId);
     const selection = await getSelectionAndPageInfo(tab);
     if (!selection.selectedText?.trim()) {
-      showNotification('No text selected', 'Select some text on the page, then click "Plug it in" in the extension.');
+      showNotification('No text selected', 'Select some text on the page, then click "Text Snip" in the extension.');
       return;
     }
     await plugHighlightIntoDoc(selection, tab.id);

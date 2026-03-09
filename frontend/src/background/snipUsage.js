@@ -133,7 +133,7 @@ export async function recordImageSnipAndCheckLimit(params = {}) {
 
 /**
  * Call get_snip_usage RPC. Returns { used, limit, allowed } or { error }.
- * Used to disable "Snip and Plug" when limit is reached.
+ * Used to disable "Image Snip" when limit is reached.
  * @returns {Promise<{ used?: number, limit?: number, allowed?: boolean, error?: string }>}
  */
 export async function getSnipUsage() {

@@ -110,7 +110,7 @@ export async function handleMessage(msg, sender) {
     }
   }
 
-  // --- Plug it in: get selection from tab ---
+  // --- Text Snip: get selection from tab ---
   if (type === 'GET_PLUG_SELECTION') {
     const tabId = msg.tabId;
     if (!tabId) {
@@ -140,7 +140,7 @@ export async function handleMessage(msg, sender) {
     }
   }
 
-  // --- Plug it in: get document sections for placement ---
+  // --- Text Snip: get document sections for placement ---
   if (type === 'DOCS_GET_SECTIONS') {
     try {
       const documentId = await getSelectedDocumentId();
@@ -158,7 +158,7 @@ export async function handleMessage(msg, sender) {
     }
   }
 
-  // --- Plug it in: insert at chosen section ---
+  // --- Text Snip: insert at chosen section ---
   if (type === 'PLUG_IT_IN_AT_SECTION') {
     const { selectionData, insertIndex } = msg;
     if (!selectionData || typeof insertIndex !== 'number') {

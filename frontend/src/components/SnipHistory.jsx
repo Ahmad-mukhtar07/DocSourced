@@ -271,7 +271,7 @@ export function SnipHistory({ documentId, onShowUpgrade, disabled = false }) {
       {!loading && !error && !reinsertSnip && !sectionsLoading && (
         <div className="snip-history__list-wrap">
           {filteredSnips.length === 0 ? (
-            <p className="snip-history__empty">{search.trim() ? 'No sources match your search.' : documentId ? 'No sources yet for this document. Use Plug it in or Snip and Plug to add content.' : 'Select a document to see sources used in it.'}</p>
+            <p className="snip-history__empty">{search.trim() ? 'No sources match your search.' : documentId ? 'No sources yet for this document. Use Text Snip or Image Snip to add content.' : 'Select a document to see sources used in it.'}</p>
           ) : (
             <div className="snip-history__by-domain">
               {domainKeys.map((domainKey) => {

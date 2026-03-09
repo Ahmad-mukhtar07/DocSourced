@@ -1,7 +1,7 @@
 /**
- * "Plug it in": insert selected text (and source/timestamp) into the connected Google Doc.
+ * "Text Snip": insert selected text (and source/timestamp) into the connected Google Doc.
  * When the doc is open in a tab, tries to paste at cursor first; otherwise appends via API.
- * Note: The monthly snip limit applies only to "Snip and Plug" (screenshots). This flow
+ * Note: The monthly snip limit applies only to "Image Snip" (screenshots). This flow
  * records the text in snips_history for Format References but does not count toward the limit.
  */
 
@@ -56,7 +56,7 @@ export async function plugHighlightIntoDoc(data, sourceTabId) {
     return;
   }
   if (usage.error === 'not_authenticated') {
-    showNotification('Sign in required', 'Open DocSourced and sign in to your account to use Snip and Plug.');
+    showNotification('Sign in required', 'Open DocSourced and sign in to your account to use Image Snip.');
     return;
   }
   if (usage.error) {

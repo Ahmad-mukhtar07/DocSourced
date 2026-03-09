@@ -1,6 +1,6 @@
 /**
  * Capture selected text and page info from the active tab using chrome.scripting.
- * Used when the user clicks "Plug it in" from the context menu.
+ * Used when the user clicks "Text Snip" from the context menu.
  */
 
 /**

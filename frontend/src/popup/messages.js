@@ -56,7 +56,7 @@ export async function createDoc(name = 'Untitled') {
 }
 
 /**
- * Get selection from a tab (for Plug it in section flow).
+ * Get selection from a tab (for Text Snip section flow).
  * @param {number} tabId
  * @returns {Promise<{ success: boolean, selection?: { selectedText, pageUrl, pageTitle, timestamp }, error?: string }>}
  */
@@ -83,7 +83,7 @@ export async function plugItInAtSection(selectionData, insertIndex) {
 }
 
 /**
- * Get current snip usage (used, limit, allowed). For disabling "Snip and Plug" when limit reached.
+ * Get current snip usage (used, limit, allowed). For disabling "Image Snip" when limit reached.
  * @returns {Promise<{ used?: number, limit?: number, allowed?: boolean, error?: string }>}
  */
 export async function getSnipUsage() {

@@ -8,8 +8,8 @@ import { SnipHistory } from './SnipHistory';
 import './ConnectedDocument.css';
 
 /**
- * Shows the currently connected document, "Snip and Plug", and "Change document".
- * "Plug it in" opens a section picker to choose where to insert the selected text.
+ * Shows the currently connected document, "Image Snip", and "Change document".
+ * "Text Snip" opens a section picker to choose where to insert the selected text.
  */
 export function ConnectedDocument({ documentId, documentName, onChangeDocument, onSwitchDocument, onDocumentRemoved, disabled = false }) {
   const { user: supabaseUser, syncSessionTokenToStorage } = useAuth();
@@ -30,7 +30,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
   const [upgradeModalReason, setUpgradeModalReason] = useState('snip_limit');
   const [upgradeModalLimit, setUpgradeModalLimit] = useState(25);
   const { canAccessSnipHistory, canUseUnlimitedSnips } = useFeatureAccess();
-  // Block Snip and Plug only after we've queried usage and user is over limit (allow by default until then)
+  // Block Image Snip only after we've queried usage and user is over limit (allow by default until then)
   const [snipUsage, setSnipUsage] = useState({ used: 0, limit: 25, allowed: true });
   const [snipUsageLoaded, setSnipUsageLoaded] = useState(false);
   const [snipUsageError, setSnipUsageError] = useState(null);
@@ -199,7 +199,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
         }
         setSnipStep(null);
         storage.remove(SNIP_INSERTING_KEY);
-        setSnipError(typeof errMsg === 'string' ? errMsg : 'Snip and Plug failed');
+        setSnipError(typeof errMsg === 'string' ? errMsg : 'Image Snip failed');
         storage.remove(SNIP_ERROR_KEY);
       }
     };
@@ -225,7 +225,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
       if (result?.[SNIP_ERROR_KEY]) {
         setSnipStep(null);
         storage.remove(SNIP_INSERTING_KEY);
-        setSnipError(typeof result[SNIP_ERROR_KEY] === 'string' ? result[SNIP_ERROR_KEY] : 'Snip and Plug failed');
+        setSnipError(typeof result[SNIP_ERROR_KEY] === 'string' ? result[SNIP_ERROR_KEY] : 'Image Snip failed');
         storage.remove(SNIP_ERROR_KEY);
       }
       if (result?.['eznote_snip_cancelled'] === true) {
@@ -394,7 +394,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
         setSnipUsage((prev) => ({ ...prev, allowed: false }));
       } else {
         const errMsg = res?.error === 'not_authenticated'
-          ? 'Sign in to your account to use Snip and Plug.'
+          ? 'Sign in to your account to use Image Snip.'
           : (res?.error || 'Insert failed');
         setPlugError(errMsg);
         setPlugStep('sections');
@@ -589,7 +589,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
             {plugStep === 'loading' && <span>Loading…</span>}
             {plugStep === 'inserting' && <span>Adding…</span>}
             {plugStep === 'sections' && <span>Choose section…</span>}
-            {plugStep === null && 'Plug it in'}
+            {plugStep === null && 'Text Snip'}
           </button>
           {plugStep === 'sections' && (
             <div className="connected-doc__sections">
@@ -625,23 +625,23 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
                 disabled={disabled || plugStep !== null || !snipUsage.allowed}
                 title={
                   !snipUsage.allowed
-                    ? (userId == null ? 'Sign in to use Snip and Plug' : undefined)
+                    ? (userId == null ? 'Sign in to use Image Snip' : undefined)
                     : plugStep !== null
-                      ? 'Wait for Plug it in to finish'
+                      ? 'Wait for Text Snip to finish'
                       : undefined
                 }
                 aria-label={
                   !canUseUnlimitedSnips && snipUsageLoaded
-                    ? `Snip and Plug. ${snipUsage.allowed ? `${snipUsage.used} of ${snipUsage.limit} snips used this month` : `Monthly limit reached (${snipUsage.used}/${snipUsage.limit})`}`
+                    ? `Image Snip. ${snipUsage.allowed ? `${snipUsage.used} of ${snipUsage.limit} snips used this month` : `Monthly limit reached (${snipUsage.used}/${snipUsage.limit})`}`
                     : undefined
                 }
               >
-                Snip and Plug
+                Image Snip
               </button>
               {!canUseUnlimitedSnips && snipUsageLoaded && (
                 <span className="connected-doc__tooltip connected-doc__tooltip--snip" role="tooltip">
                   {userId == null
-                    ? 'Sign in to use Snip and Plug'
+                    ? 'Sign in to use Image Snip'
                     : snipUsage.allowed
                       ? `${snipUsage.used} of ${snipUsage.limit} snips used this month`
                       : `Monthly limit reached (${snipUsage.used}/${snipUsage.limit})`}
@@ -703,7 +703,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
           {snipUsageLoaded && !snipUsage.allowed && (
             <p className="connected-doc__plug-error" role="alert">
               {userId == null
-                ? 'Sign in to use Snip and Plug.'
+                ? 'Sign in to use Image Snip.'
                 : `Monthly Snip limit reached (${snipUsage.used}/${snipUsage.limit}). Upgrade to add more.`}
             </p>
           )}

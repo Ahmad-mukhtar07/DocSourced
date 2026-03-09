@@ -9,7 +9,7 @@
   var LOG_PREFIX = '[DocSourced Content]';
   var OVERLAY_ID = 'eznote-snip-overlay';
 
-  // If overlay already exists (e.g. user clicked "Snip and Plug" again), remove it and exit.
+  // If overlay already exists (e.g. user clicked "Image Snip" again), remove it and exit.
   var existing = document.getElementById(OVERLAY_ID);
   if (existing && existing.parentNode) {
     existing.parentNode.removeChild(existing);

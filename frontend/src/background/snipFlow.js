@@ -1,5 +1,5 @@
 /**
- * Snip and Plug: inject overlay, capture tab, crop in content script, upload to Drive (Research Snips folder), insert into Doc.
+ * Image Snip: inject overlay, capture tab, crop in content script, upload to Drive (Research Snips folder), insert into Doc.
  * All API calls go through auth.withTokenRetry, googleDrive, and googleDocs.
  */
 
@@ -214,7 +214,7 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
     } catch (_) {}
     if (sessionStorage) await sessionStorage.remove(SNIP_INSERT_ERROR_KEY);
     showNotification(
-      'Snip and Plug',
+      'Image Snip',
       'Image copied to clipboard. Paste anywhere.' + (pageTitleForNotify ? ` Source: ${pageTitleForNotify}` : '')
     );
     return;
@@ -252,11 +252,11 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
       return;
     }
     if (usage.error === 'not_authenticated') {
-      await notifyAndRemoveOverlay(tabId, 'Sign in required', 'Open the extension and sign in to your account to use Snip and Plug.', true);
+      await notifyAndRemoveOverlay(tabId, 'Sign in required', 'Open the extension and sign in to your account to use Image Snip.', true);
       return;
     }
     if (usage.error) {
-      await notifyAndRemoveOverlay(tabId, 'Snip and Plug failed', usage.error, true);
+      await notifyAndRemoveOverlay(tabId, 'Image Snip failed', usage.error, true);
       return;
     }
     const snipId = usage.snip_id ?? null;
@@ -277,7 +277,7 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
       await sessionStorage.remove(SNIP_INSERT_ERROR_KEY);
       await sessionStorage.set({ [SNIP_INSERT_SUCCESS_KEY]: true });
     }
-    showNotification('Snip and Plug', 'Screenshot added at cursor in your open doc.');
+    showNotification('Image Snip', 'Screenshot added at cursor in your open doc.');
     return;
   }
 
@@ -320,7 +320,7 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
           throw new Error('SNIP_LIMIT_REACHED');
         }
         if (usage.error === 'not_authenticated') {
-          await notifyAndRemoveOverlay(tabId, 'Sign in required', 'Open the extension and sign in to your account to use Snip and Plug.', true);
+          await notifyAndRemoveOverlay(tabId, 'Sign in required', 'Open the extension and sign in to your account to use Image Snip.', true);
           throw new Error('NOT_AUTHENTICATED');
         }
         if (usage.error) {
@@ -339,7 +339,7 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
       await sessionStorage.remove(SNIP_INSERT_ERROR_KEY);
       await sessionStorage.set({ [SNIP_INSERT_SUCCESS_KEY]: true });
     }
-    showNotification('Snip and Plug', 'Screenshot was added to your Google Doc.');
+    showNotification('Image Snip', 'Screenshot was added to your Google Doc.');
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg === 'SNIP_LIMIT_REACHED' || msg === 'NOT_AUTHENTICATED') return; // already notified above
@@ -347,7 +347,7 @@ export async function handleSnipBounds(tabId, bounds, windowId = null, pageInfo 
       await notifyAndRemoveOverlay(tabId, 'Sign in required', 'Open DocSourced and click "Connect Google Docs" to sign in.', true);
       return;
     }
-    await notifyAndRemoveOverlay(tabId, 'Snip and Plug failed', userFriendlyInsertError(msg), true);
+    await notifyAndRemoveOverlay(tabId, 'Image Snip failed', userFriendlyInsertError(msg), true);
   }
 }
 

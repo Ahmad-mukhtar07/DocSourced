@@ -1,6 +1,6 @@
 /**
  * Content script for docs.google.com: on message, trigger a paste at the current cursor.
- * Used when the user has the connected doc open in a tab and uses "Plug it in" for insert-at-cursor.
+ * Used when the user has the connected doc open in a tab and uses "Text Snip" for insert-at-cursor.
  */
 (function () {
   'use strict';
