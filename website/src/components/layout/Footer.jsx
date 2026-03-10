@@ -34,6 +34,7 @@ export function Footer() {
             <nav className="footer__nav" aria-label="Footer">
               <Link to="/" className="footer__link">Home</Link>
               <Link to="/privacy" className="footer__link">Privacy Policy</Link>
+              <Link to="/terms" className="footer__link">Terms of Service</Link>
               <a href="mailto:ahmadmukhtar2001@gmail.com" className="footer__link">Contact</a>
             </nav>
             <div className="footer__social">

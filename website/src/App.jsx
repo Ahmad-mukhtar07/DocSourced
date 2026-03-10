@@ -5,6 +5,7 @@ import { Layout } from './components/layout/Layout';
 import { HomePage } from './pages/HomePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { TermsOfServicePage } from './pages/TermsOfServicePage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { CheckoutSuccessPage } from './pages/CheckoutSuccessPage';
 import { CheckoutCancelPage } from './pages/CheckoutCancelPage';
@@ -22,6 +23,7 @@ export default function App() {
           {/* Dashboard: available to any logged-in user. Page redirects to / if not authenticated. */}
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="privacy" element={<PrivacyPolicyPage />} />
+          <Route path="terms" element={<TermsOfServicePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
