@@ -6,8 +6,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { handleUpgradeToProWithUser } from '../lib/ctaHandlers';
-import { supabaseClient } from '../config/supabase-config';
 import './OnboardingBanners.css';
 
 const STORAGE_KEY = 'docSourcedOnboardingBannerDismissed';
@@ -24,10 +22,6 @@ export function OnboardingBanner() {
   const handleDismiss = () => {
     localStorage.setItem(STORAGE_KEY, '1');
     setDismissed(true);
-  };
-
-  const handleUpgrade = () => {
-    handleUpgradeToProWithUser(supabaseClient);
   };
 
   const isFree = tier === 'free' || (!tier && !subscriptionLoading);
@@ -47,16 +41,15 @@ export function OnboardingBanner() {
           Snip History.
         </p>
         <div className="onboarding-banner__actions">
-          <button
-            type="button"
+          <Link
+            to="/dashboard"
             className="onboarding-banner__cta navbar__btn navbar__btn--primary"
-            onClick={handleUpgrade}
           >
             Upgrade to Pro
-          </button>
-          <Link to="/#pricing" className="onboarding-banner__link">
-            View pricing
           </Link>
+          <a href="/#pricing" className="onboarding-banner__link">
+            View pricing
+          </a>
         </div>
         <button
           type="button"
