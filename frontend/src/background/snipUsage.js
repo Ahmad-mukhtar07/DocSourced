@@ -164,11 +164,11 @@ export async function getSnipUsage() {
     return { error: data?.message || data?.error || 'get_snip_usage_failed', allowed: true };
   }
   if (data?.error) {
-    return { used: 0, limit: 25, allowed: data.allowed !== false };
+    return { used: 0, limit: 15, allowed: data.allowed !== false };
   }
   return {
     used: typeof data.used === 'number' ? data.used : 0,
-    limit: typeof data.limit === 'number' ? data.limit : 25,
+    limit: typeof data.limit === 'number' ? data.limit : 15,
     allowed: data.allowed !== false,
   };
 }

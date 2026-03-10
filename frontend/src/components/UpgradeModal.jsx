@@ -22,9 +22,9 @@ function openUpgradePage() {
  * @param {boolean} props.open
  * @param {() => void} props.onClose
  * @param {'snip_limit' | 'doc_limit' | 'snip_history'} [props.reason] - Which limit was hit (default: snip_limit)
- * @param {number} [props.limit] - Snip limit number when reason is snip_limit (default: 25)
+ * @param {number} [props.limit] - Snip limit number when reason is snip_limit (default: 15)
  */
-export function UpgradeModal({ open, onClose, reason = 'snip_limit', limit = 25 }) {
+export function UpgradeModal({ open, onClose, reason = 'snip_limit', limit = 15 }) {
   if (!open) return null;
   const r = REASONS.includes(reason) ? reason : 'snip_limit';
 

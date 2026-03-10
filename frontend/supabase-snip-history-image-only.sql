@@ -28,7 +28,7 @@ DECLARE
   v_tier text;
   v_period text;
   v_count int;
-  v_limit int := 25;
+  v_limit int := 15;
 BEGIN
   v_uid := auth.uid();
   IF v_uid IS NULL THEN
@@ -98,7 +98,7 @@ DECLARE
   v_tier text;
   v_period text;
   v_count int;
-  v_limit int := 25;
+  v_limit int := 15;
 BEGIN
   v_uid := auth.uid();
   IF v_uid IS NULL THEN

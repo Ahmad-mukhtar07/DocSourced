@@ -31,7 +31,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
   const [upgradeModalLimit, setUpgradeModalLimit] = useState(25);
   const { canAccessSnipHistory, canUseUnlimitedSnips } = useFeatureAccess();
   // Block Image Snip only after we've queried usage and user is over limit (allow by default until then)
-  const [snipUsage, setSnipUsage] = useState({ used: 0, limit: 25, allowed: true });
+  const [snipUsage, setSnipUsage] = useState({ used: 0, limit: 15, allowed: true });
   const [snipUsageLoaded, setSnipUsageLoaded] = useState(false);
   const [snipUsageError, setSnipUsageError] = useState(null);
   const [docDropdownOpen, setDocDropdownOpen] = useState(false);
@@ -77,7 +77,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
       }
       setSnipUsage({
         used: typeof u?.used === 'number' ? u.used : 0,
-        limit: typeof u?.limit === 'number' ? u.limit : 25,
+        limit: typeof u?.limit === 'number' ? u.limit : 15,
         allowed: u?.allowed === true || (u?.allowed !== false && (typeof u?.limit === 'number' && u.limit > 0 ? (typeof u?.used === 'number' && u.used < u.limit) : true)),
       });
       setSnipUsageError(null);
@@ -400,7 +400,7 @@ export function ConnectedDocument({ documentId, documentName, onChangeDocument, 
         setPlugSelection(null);
         setPlugSections([]);
         setPlugError(null);
-        setUpgradeModalLimit(res?.limit ?? 25);
+        setUpgradeModalLimit(res?.limit ?? 15);
         setUpgradeModalReason('snip_limit');
         setShowUpgradeModal(true);
         setSnipUsage((prev) => ({ ...prev, allowed: false }));

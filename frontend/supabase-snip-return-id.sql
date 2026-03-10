@@ -18,7 +18,7 @@ DECLARE
   v_tier text;
   v_period text;
   v_count int;
-  v_limit int := 25;
+  v_limit int := 15;
   v_snip_id uuid;
 BEGIN
   v_uid := auth.uid();

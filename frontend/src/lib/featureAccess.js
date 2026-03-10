@@ -5,7 +5,7 @@
  */
 
 export const FEATURES = {
-  /** Unlimited snips per month (free = 25/month) */
+  /** Unlimited snips per month (free = 15/month) */
   UNLIMITED_SNIPS: 'pro',
   /** Connect more than one document (free = 1 doc) */
   MULTIPLE_DOCS: 'pro',

@@ -18,24 +18,27 @@ ALTER TABLE public.user_usage ADD CONSTRAINT user_usage_pkey PRIMARY KEY (user_i
 
 ALTER TABLE public.user_usage ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can read own usage" ON public.user_usage;
 CREATE POLICY "Users can read own usage"
   ON public.user_usage FOR SELECT
   TO authenticated
   USING (auth.uid() = user_id);
 
 -- Only the RPC (SECURITY DEFINER) will insert/update user_usage
+DROP POLICY IF EXISTS "Users can insert own usage" ON public.user_usage;
 CREATE POLICY "Users can insert own usage"
   ON public.user_usage FOR INSERT
   TO authenticated
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own usage" ON public.user_usage;
 CREATE POLICY "Users can update own usage"
   ON public.user_usage FOR UPDATE
   TO authenticated
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
--- 2. RPC: record one snip and enforce free-tier monthly limit (25). Returns error or success.
+-- 2. RPC: record one snip and enforce free-tier monthly limit (15). Returns error or success.
 CREATE OR REPLACE FUNCTION public.record_snip_and_check_limit(
   p_content text DEFAULT '',
   p_source_url text DEFAULT '',
@@ -51,7 +54,7 @@ DECLARE
   v_tier text;
   v_period text;
   v_count int;
-  v_limit int := 25;
+  v_limit int := 15;
 BEGIN
   v_uid := auth.uid();
   IF v_uid IS NULL THEN
@@ -101,7 +104,7 @@ DECLARE
   v_tier text;
   v_period text;
   v_count int;
-  v_limit int := 25;
+  v_limit int := 15;
 BEGIN
   v_uid := auth.uid();
   IF v_uid IS NULL THEN
